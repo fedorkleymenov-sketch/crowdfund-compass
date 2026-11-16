@@ -15,7 +15,8 @@ LOGO = ("<svg width='{s}' height='{s}' viewBox='0 0 64 64' aria-hidden='true'><c
 CSS = f"""
 <style>
 @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap');
-html, body, [class*="css"], .stApp, .stMarkdown, button, input, textarea, select {{font-family: 'Inter', -apple-system, 'Segoe UI', sans-serif !important;}}
+html, body, .stApp, .stApp p, .stApp div, .stApp label, .stApp li, .stApp a, .stApp h1, .stApp h2, .stApp h3, .stApp h4, .stApp td, .stApp th,
+.stApp span:not([data-testid="stIconMaterial"]):not([class*="material"]), button, input, textarea, select {{font-family: 'Inter', -apple-system, 'Segoe UI', sans-serif !important;}}
 .stApp {{background: {BG};}}
 .block-container {{padding-top: 1.4rem; padding-bottom: 4rem; max-width: 1180px;}}
 #MainMenu, footer, header[data-testid="stHeader"] {{visibility: hidden; height: 0;}}

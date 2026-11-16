@@ -130,10 +130,10 @@ st.title("🧭 Crowdfund Compass")
 st.markdown("A readiness check for Kickstarter campaigns **before** launch. Built from about 44,000 recent campaigns. "
             "It compares your plan with past campaigns. It does not promise an outcome.")
 
-page = st.sidebar.radio("Page", ["Launch check-up", "Goal optimizer", "Coach cohort view", "Similar campaigns", "Category benchmarks", "How it works"])
-st.sidebar.markdown("---")
-st.sidebar.markdown("<span class='cc-note'>HSG · Business Analytics & Data Science Applications · Group 11<br>"
-                    "Kleymenov, Arcauz, Braun</span>", unsafe_allow_html=True)
+# Navigation in the main area (a sidebar is hidden on narrow screens)
+page = st.radio("Page", ["Launch check-up", "Goal optimizer", "Coach cohort view", "Similar campaigns", "Category benchmarks", "How it works"],
+                horizontal=True, label_visibility="collapsed")
+st.caption("HSG · Business Analytics & Data Science Applications · Group 11 · Kleymenov, Arcauz, Braun")
 
 
 #### Inputs (shared by the check-up and the goal optimizer)

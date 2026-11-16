@@ -63,6 +63,17 @@ LABELS = {
     "name_has_digit": "a number in the title", "name_has_symbol": "punctuation in the title", "name_caps_share": "capital letters in the title",
     "blurb_flesch": "how easy the blurb is to read", "blurb_sentiment": "the tone of the blurb", "kw_exclaim": "an exclamation mark in the blurb",
     "kw_you": "addressing the reader ('you')", "kw_we": "speaking as 'we'", "kw_new_first": "words like 'new' or 'first'"}
+COUNTRY_NAMES = {"US": "United States", "GB": "United Kingdom", "CA": "Canada", "AU": "Australia", "DE": "Germany", "FR": "France",
+                 "IT": "Italy", "HK": "Hong Kong", "ES": "Spain", "MX": "Mexico", "NL": "Netherlands", "SE": "Sweden", "JP": "Japan",
+                 "SG": "Singapore", "NZ": "New Zealand", "DK": "Denmark", "CH": "Switzerland", "PL": "Poland", "IE": "Ireland",
+                 "BE": "Belgium", "AT": "Austria", "NO": "Norway", "GR": "Greece", "SI": "Slovenia", "LU": "Luxembourg"}
+COUNTRY_CODES = {v.lower(): k for k, v in COUNTRY_NAMES.items()}
+
+def middle(low, high):
+    """Middle of the chance range (on the odds scale). Checked on one public figure: tabletop games 2024, official 80%, middle 78%."""
+    lg = lambda p: np.log(np.clip(p, 1e-4, 1 - 1e-4) / (1 - np.clip(p, 1e-4, 1 - 1e-4)))
+    return float(1 / (1 + np.exp(-(lg(low) + lg(high)) / 2)))
+
 AREA_TEXT = {
     "Ambition": ("Ambition", "Goal and campaign length"), "Timing": ("Timing", "Preparation time and launch day"),
     "Pitch": ("Pitch", "Length and form of title and blurb"), "Presentation": ("Presentation", "Pre-launch page and video"),
@@ -135,7 +146,8 @@ def campaign_inputs():
     sub = CATS[CATS.parent == parent]
     names = sub.name.tolist()
     cat_name = c2.selectbox("Category", names, index=names.index("Tabletop Games") if "Tabletop Games" in names else 0)
-    country = c3.selectbox("Country", META["countries"], index=META["countries"].index("CH"))
+    country_names = sorted(COUNTRY_NAMES.values())
+    country = COUNTRY_CODES[c3.selectbox("Country", country_names, index=country_names.index("Switzerland")).lower()]
     name = st.text_input("Campaign title", "Alpine Trails: A Cooperative Hiking Board Game for 1–4 Players", max_chars=85)
     blurb = st.text_area("Blurb (the one or two sentences under the title)",
                          "Plan your route, share your supplies and reach the summit together before the weather turns.", max_chars=135, height=70)
@@ -180,10 +192,11 @@ if page == "Launch check-up":
     left.markdown(f"<div class='cc-card'><span class='cc-note'>Verdict</span><br><span class='cc-pill' style='background:{colour}'>{r['verdict']}</span>"
                   f"<p style='margin:.6rem 0 0 0'>{explain}</p></div>", unsafe_allow_html=True)
     right.markdown(f"<div class='cc-card'><span class='cc-note'>Chance of reaching the goal</span><br>"
-                   f"<span class='cc-big'>between {r['low'] * 100:.0f}% and {r['high'] * 100:.0f}%</span>"
-                   f"<p class='cc-note' style='margin:.4rem 0 0 0'>Upper value: campaigns like yours in our data. Lower value: adjusted to Kickstarter's official "
-                   f"funding rates, because our data misses many failed campaigns. Official rates are all-time averages and recent rates are higher, "
-                   f"so the truth is expected in between.</p></div>", unsafe_allow_html=True)
+                   f"<span class='cc-big'>most likely about {middle(r['low'], r['high']) * 100:.0f}%</span><br>"
+                   f"<b>between {r['low'] * 100:.0f}% and {r['high'] * 100:.0f}%</b>"
+                   f"<p class='cc-note' style='margin:.4rem 0 0 0'>Why the range is wide: our data shows only about 4 in 10 failed campaigns, so the true level is uncertain. "
+                   f"Upper value = campaigns like yours in our data. Lower value = adjusted to Kickstarter's official all-time rates. "
+                   f"'Most likely' is the middle of the two. How plans rank against each other is much more certain than the percentage.</p></div>", unsafe_allow_html=True)
 
     # Six area bars
     st.subheader("Where the plan is strong and weak")
@@ -192,6 +205,11 @@ if page == "Launch check-up":
     cols = st.columns(3)
     for i, a in enumerate(["Ambition", "Timing", "Pitch", "Presentation", "Founder", "Market"]):
         s = float(r["areas"][a]); col, word = band(s); title, sub = AREA_TEXT[a]
+        if a == "Founder" and c["prior_n"] == 0:           # a first campaign is not a weakness: show it neutrally, without a score
+            cols[i % 3].markdown(f"<div class='cc-card'><b>{title}</b><div class='cc-bar'></div>"
+                                 f"<span class='cc-note'><b>First campaign: no track record yet.</b> Creators with funded campaigns behind them do better, "
+                                 f"so preparation matters more for you.</span></div>", unsafe_allow_html=True)
+            continue
         cols[i % 3].markdown(f"<div class='cc-card'><b>{title}</b> · <span style='color:{col}'>{word}</span> <span style='float:right'><b>{s:.0f}</b>/100</span>"
                              f"<div class='cc-bar'><div class='cc-fill' style='width:{max(s, 3):.0f}%;background:{col}'></div></div>"
                              f"<span class='cc-note'>{sub}</span></div>", unsafe_allow_html=True)
@@ -251,7 +269,7 @@ if page == "Goal optimizer":
     cut = META["verdict"]["reference_cut"] * 100
     def at(goal):                                      # chance range at one goal, read off the curve
         row = curve.iloc[(curve["Goal (USD)"] - goal).abs().argmin()]
-        return f"between {row.low:.0f}% and {row.high:.0f}%"
+        return f"about {middle(row.low / 100, row.high / 100) * 100:.0f}% (between {row.low:.0f}% and {row.high:.0f}%)"
     options = [("Minimum budget", c["min_budget_usd"]), ("Your goal", c["goal_usd"]), ("Your goal + 50%", c["goal_usd"] * 1.5)]
     st.table(pd.DataFrame({"Goal": [f"${g:,.0f}" for _, g in options], "Chance of reaching it": [at(g) for _, g in options]},
                           index=[n for n, _ in options]))
@@ -273,7 +291,7 @@ if page == "Goal optimizer":
 COHORT_COLUMNS = ["title", "blurb", "main_category", "category", "country", "goal_usd", "min_budget_usd", "duration_days", "launch_date",
                   "prep_days", "has_video", "prelaunch_page", "earlier_campaigns", "earlier_funded", "days_since_last"]
 EXAMPLE_COHORT = pd.DataFrame([
-    ["Alpine Trails: A Cooperative Hiking Board Game", "Plan your route, share supplies and reach the summit together.", "Games", "Tabletop Games", "CH", 15000, 9000, 30, "2027-02-02", 30, 1, 0, 0, 0, 0],
+    ["Alpine Trails: A Cooperative Hiking Board Game", "Plan your route, share supplies and reach the summit together.", "Games", "Tabletop Games", "Switzerland", 15000, 9000, 30, "2027-02-02", 30, 1, 0, 0, 0, 0],
     ["BudgetBuddy: the AI app that manages your money", "A mobile application platform empowering students to track spending.", "Technology", "Apps", "CH", 60000, 40000, 45, "2027-02-10", 3, 0, 0, 0, 0, 0],
     ["Night Harbor #4: A 32-Page Noir Fantasy Comic", "Issue 4 of the indie graphic novel series. Variant covers and enamel pins.", "Comics", "Comic Books", "DE", 3000, 2000, 21, "2027-02-16", 60, 1, 1, 4, 4, 200],
     ["Zürich Rooftop Honey", "Small batch honey from city bees, delivered to your door.", "Food", "Small Batch", "CH", 8000, 5000, 30, "2027-03-01", 10, 1, 0, 0, 0, 0],
@@ -292,13 +310,14 @@ def score_cohort(df, capacity):
     for i, x in df.iterrows():
         try:
             cat_id = lookup[(str(x.main_category).strip().lower(), str(x.category).strip().lower())]
-            c = {"cat_id": cat_id, "country": str(x.country).strip().upper(), "name": str(x.title), "blurb": "" if pd.isna(x.blurb) else str(x.blurb),
+            c = {"cat_id": cat_id, "country": COUNTRY_CODES.get(str(x.country).strip().lower(), str(x.country).strip().upper()), "name": str(x.title), "blurb": "" if pd.isna(x.blurb) else str(x.blurb),
                  "goal_usd": float(x.goal_usd), "min_budget_usd": float(min(x.min_budget_usd, x.goal_usd)), "duration_days": float(x.duration_days),
                  "launch_date": pd.Timestamp(x.launch_date), "prep_days": float(x.prep_days), "has_video": int(x.has_video), "prelaunch": int(x.prelaunch_page),
                  "prior_n": int(x.earlier_campaigns), "prior_funded": int(min(x.earlier_funded, x.earlier_campaigns)), "days_since_last": float(x.days_since_last)}
             r = check(c)
             levers = ["Ambition", "Timing", "Pitch", "Presentation"]
-            rows.append({"Campaign": c["name"], "Chance (low)": round(r["low"] * 100), "Chance (high)": round(r["high"] * 100),
+            rows.append({"Campaign": c["name"], "Most likely chance (%)": round(middle(r["low"], r["high"]) * 100),
+                         "Chance (low)": round(r["low"] * 100), "Chance (high)": round(r["high"] * 100),
                          "Weakest area": min(levers, key=lambda a: r["areas"][a]), "Top fix": r["fixes"][0]["change"] if r["fixes"] else "No single change stands out",
                          "Gain (points)": round(r["fixes"][0]["gain"]) if r["fixes"] else 0,
                          "Product type rarely funded": "yes" if r["areas"]["Market"] <= 15 else "", "_low": r["low"]})
@@ -351,8 +370,11 @@ if page == "Similar campaigns":
     X = P.campaign_features(c, META, TEXT).iloc[0]
     S = similar_table(); sm = META["similar"]
     pool = S[S.parent_category == X.parent_category]
-    if same_country and (pool.country == c["country"]).sum() >= 20:
-        pool = pool[pool.country == c["country"]]
+    if same_country:
+        if (pool.country == c["country"]).sum() >= 20:
+            pool = pool[pool.country == c["country"]]
+        else:
+            st.info(f"Fewer than 20 past {X.parent_category} campaigns from {COUNTRY_NAMES[c['country']]} in our data, so all countries are shown.")
     mine = {"log_goal_usd": X.log_goal_usd, "duration_days": X.duration_days, "log_prep_days": X.log_prep_days,
             "log_prior": np.log10(X.creator_prior_n + 1), "prelaunch_activated": X.prelaunch_activated, "has_video": X.has_video,
             "text_score": X.text_score, "first_timer": X.first_timer}
@@ -364,7 +386,7 @@ if page == "Similar campaigns":
                 f"<p class='cc-note' style='margin:.4rem 0 0 0'>Similar = same main category and closest on goal, length, preparation time, creator experience, "
                 f"video, pre-launch page and type of product. Our data misses many failed campaigns, so this count is on the optimistic side.</p></div>", unsafe_allow_html=True)
     names = CATS.set_index("cat_id").name
-    show = pd.DataFrame({"Campaign": near.name.values, "Category": near.cat_id.map(names).fillna("").values, "Country": near.country.astype(str).values,
+    show = pd.DataFrame({"Campaign": near.name.values, "Category": near.cat_id.map(names).fillna("").values, "Country": near.country.astype(str).map(COUNTRY_NAMES).values,
                          "City": near.city.fillna("").values, "Launched": near.launch_year.values, "Goal (USD)": near.goal_usd.values,
                          "Outcome": np.where(near.success == 1, "Funded", "Not funded"),
                          "Find it": ["https://www.kickstarter.com/discover/advanced?term=" + P.quote(n) for n in near.name.values]})
@@ -430,6 +452,7 @@ if page == "How it works":
     st.subheader("Limits you should know")
     st.markdown("""
 - **Our data misses many failed campaigns.** We hold about 85% of all funded campaigns but about 42% of the failed ones, because Kickstarter's listings hide most campaigns that failed. Chances from our data alone are too high. That is why the app shows a range, with the lower value adjusted to Kickstarter's official funding rates.
+- **Why the range is wide, and what "most likely" means.** The lower and upper value differ by about 15 points on average. "Most likely" is the middle of the two. We could check it on one public figure: Kickstarter reported that 80% of tabletop game campaigns launched in 2024 were funded; our middle value for those campaigns is 78% (lower 66%, upper 86%).
 - **The ranking is more reliable than the level.** The model is good at telling stronger plans from weaker ones. The exact percentage is rough.
 - **Patterns, not causes.** "Campaigns with a pre-launch page were funded more often" does not mean a page causes funding.
 - **Most of the result is not in the founder's hands.** What is being made and the creator's track record explain 57% of the model's result; goal, timing, presentation and pitch explain 43%.

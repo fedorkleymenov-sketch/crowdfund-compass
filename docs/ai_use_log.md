@@ -6,5 +6,6 @@ Course rule: "Use whatever you want, but cite correctly."
 |---|---|---|
 | 07–16.11.2026 | Claude (Anthropic), earlier chats | Topic brainstorm, proposal slides, data collection, first merge script, project brief |
 | 16.11.2026 | Claude (Anthropic), model Fable 5.2 | Data audit and rebuild of the merged table (`merge_v2.py`); semantic layer and feature role table; feature module and notebook 02; models, evaluation and notebook 03; SHAP, area scores, advice module, verdict rule and notebook 04; Streamlit app |
+| 16.11.2026 | Claude (Anthropic), model Fable 5.2 | Redesign of the app (presentation only, no model or number changed); PowerPoint deck with charts; chart check of the deck; first draft of the 15-minute voice-over script and of the pitch script (the team rewrites the texts) |
 
 All numbers were computed with code on the data. Decisions on scope, definitions, metrics and the verdict rule were taken by the team at each checkpoint.

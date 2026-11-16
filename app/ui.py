@@ -71,7 +71,9 @@ div[data-testid="stVerticalBlockBorderWrapper"] {{border-radius: 16px !important
 .stButton > button, .stDownloadButton > button {{border-radius: 10px; font-weight: 600; border: 1px solid {LINE}; transition: all .15s ease;}}
 .stButton > button[kind="primary"] {{background: #3FCFA4; color: {NAVY}; border: none; padding: .6rem 1.3rem; font-size: 1rem;}}
 .stButton > button[kind="primary"]:hover {{background: #5ADBB4; transform: translateY(-1px);}}
+.cc-jump {{display: none;}}
 @media (max-width: 760px) {{
+  .cc-jump {{display: block; text-align: center; background: {TEAL}; color: #fff !important; font-weight: 700; border-radius: 10px; padding: .7rem; margin: .2rem 0 .8rem 0; text-decoration: none;}}
   .cc-hero {{padding: 1.6rem 1.2rem;}} .cc-hero h1 {{font-size: 1.6rem;}} .cc-kpis, .cc-pipe {{grid-template-columns: 1fr;}}
   .cc-pipe .box:not(:last-child)::after {{content: '';}} .cc-tag {{display: none;}} [data-tip]:hover::after {{width: 180px;}}
 }}
@@ -113,12 +115,13 @@ def gauge(low, mid, high, colour):
 <text x='110' y='106' text-anchor='middle' font-size='10.5' fill='{MUTED}'>most likely</text></svg>
 <div style='font-weight:600;color:{INK};margin-top:-.2rem'>between {low:.0f}% and {high:.0f}%</div></div>"""
 
-def bar(title, sub, score):
+def bar(title, sub, score, note=""):
     c, word = band(score)
+    note = f"<div class='cc-note' style='margin-top:.15rem'>{note}</div>" if note else ""
     return (f"<div style='margin-bottom:.85rem'><div style='display:flex;justify-content:space-between;align-items:baseline'>"
             f"<span><b>{title}</b> <span class='cc-note'>· {sub}</span></span>"
             f"<span style='color:{c};font-weight:700;font-size:.9rem'>{word} · {score:.0f}</span></div>"
-            f"<div class='cc-bar'><div class='cc-fill' style='width:{max(score, 3):.0f}%;background:{c}'></div></div></div>")
+            f"<div class='cc-bar'><div class='cc-fill' style='width:{max(score, 3):.0f}%;background:{c}'></div></div>{note}</div>")
 
 def chart_theme():
     """One Altair style for every chart in the app."""

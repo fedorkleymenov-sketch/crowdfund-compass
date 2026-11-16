@@ -57,6 +57,8 @@ LABELS = {
     "kw_we": "speaking as 'we'", "kw_new_first": "words like 'new' or 'first'"}
 LEVERS = {"Ambition": "goal and campaign length", "Timing": "preparation time and launch day",
           "Presentation": "pre-launch page and video", "Pitch": "length and form of title and blurb"}
+AREA_OF = {"Goal": "Ambition", "Duration": "Ambition", "Launch day": "Timing", "Launch date": "Timing", "Preparation": "Timing",
+           "Video": "Presentation", "Pre-launch page": "Presentation", "Title": "Pitch", "Blurb": "Pitch"}
 COUNTRY_NAMES = {"US": "United States", "GB": "United Kingdom", "CA": "Canada", "AU": "Australia", "DE": "Germany", "FR": "France",
                  "IT": "Italy", "HK": "Hong Kong", "ES": "Spain", "MX": "Mexico", "NL": "Netherlands", "SE": "Sweden", "JP": "Japan",
                  "SG": "Singapore", "NZ": "New Zealand", "DK": "Denmark", "CH": "Switzerland", "PL": "Poland", "IE": "Ireland",
@@ -107,8 +109,12 @@ def check(c):
     X = P.campaign_features(c, META, TEXT)
     low, high = advisor.chances(X)
     areas = advisor.area_scores(X).iloc[0]
-    fixes = advisor.fixes(X.iloc[0], min_budget_usd=c["min_budget_usd"])
-    return {"X": X, "low": float(low[0]), "high": float(high[0]), "mid": middle(float(low[0]), float(high[0])), "areas": areas,
+    every = advisor.fixes(X.iloc[0], min_budget_usd=c["min_budget_usd"], top=20, min_gain=-999)      # best option per lever, all levers
+    fixes = [f for f in every if f["gain"] >= 2][:3]
+    best = {}                                                                                        # best gain per area (points)
+    for f in every:
+        best[AREA_OF[f["lever"]]] = max(best.get(AREA_OF[f["lever"]], 0), f["gain"])
+    return {"X": X, "area_best": best, "low": float(low[0]), "high": float(high[0]), "mid": middle(float(low[0]), float(high[0])), "areas": areas,
             "fixes": fixes, "verdict": advisor.verdict(low[0], fixes), "shap": advisor.shap(X).iloc[0].sort_values()}
 
 def step(n, title):
@@ -216,13 +222,15 @@ if page == "Home":
 if page == "Check-up":
     left, right = st.columns([5, 6], gap="large")
     with left:
+        st.markdown("<a class='cc-jump' href='#result'>See my result ↓</a>", unsafe_allow_html=True)
         c = campaign_inputs()
+        st.markdown("<a class='cc-jump' href='#result'>See my result ↓</a>", unsafe_allow_html=True)
     r = check(c)
     colour = ui.VERDICT[r["verdict"]]
     explain = {"Launch": "Ready as planned. No single change stands out.", "Adjust": "Worth changing one thing before launch.",
                "Coach first": "Among the riskiest plans. Talk it through with a coach before launching."}[r["verdict"]]
     with right:
-        st.markdown(f"<div class='cc-card cc-fade'><div style='display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:.5rem'>"
+        st.markdown(f"<div id='result' style='scroll-margin-top:1rem'></div><div class='cc-card cc-fade'><div style='display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:.5rem'>"
                     f"<span class='cc-eyebrow'>{ui.tip('Chance of reaching the goal', TIP_CHANCE)}</span>{ui.badge(r['verdict'])}</div>"
                     f"{ui.gauge(r['low'] * 100, r['mid'] * 100, r['high'] * 100, colour)}"
                     f"<p style='text-align:center;margin:.5rem 0 0 0'>{explain}</p></div>", unsafe_allow_html=True)
@@ -235,7 +243,14 @@ if page == "Check-up":
             st.markdown("<div class='cc-card cc-fade'><span class='cc-eyebrow'>Best next step</span><div class='cc-h'>No single change stands out</div>"
                         "<span class='cc-note'>Changing the goal, length, launch day, video, pre-launch page, preparation time, title or blurb is not linked to 2 more points.</span></div>",
                         unsafe_allow_html=True)
-        bars = "".join(ui.bar(a, sub, float(r["areas"][a])) for a, sub in LEVERS.items())
+        def weak_note(area):
+            """One line under a weak bar when no single change in that area helps much."""
+            if float(r["areas"][area]) > 25: return ""
+            g = r["area_best"].get(area, 0)
+            if g < 2: return "Weak, but no single change here is linked to 2 more points. It is the overall set-up, not one setting."
+            if g < 8: return f"Weak, yet the best single change here adds only about {g:.0f} points: within the limits you set, the plan stays far from what is typical."
+            return ""
+        bars = "".join(ui.bar(a, sub, float(r["areas"][a]), weak_note(a)) for a, sub in LEVERS.items())
         tip_levers = "Each bar compares one part of your plan with recent campaigns. 50 = typical. Green = strong, amber = to improve, red = weak."
         st.markdown(f"<div class='cc-card cc-fade'><span class='cc-eyebrow'>{ui.tip('What you can change', tip_levers)}</span>"
                     f"<div style='margin-top:.7rem'>{bars}</div></div>", unsafe_allow_html=True)
@@ -308,9 +323,13 @@ if page == "Goal optimizer":
                         "<span class='cc-note'>At any goal that covers your minimum budget, this plan stays in the riskiest group. The goal is not the main problem: look at the check-up.</span></div>", unsafe_allow_html=True)
         else:
             keep = rec.goal == here.goal
+            atmin = curve.iloc[(curve.goal - c["min_budget_usd"]).abs().argmin()]
+            why = (f" A lower goal would raise the chance a little ({atmin.mid:.0f}% at your minimum budget), but you would also ask for less money. "
+                   f"The recommendation is the highest goal that stays out of the riskiest group, not the goal with the highest chance."
+                   if keep and c["min_budget_usd"] < c["goal_usd"] * 0.98 else "")
             st.markdown(f"<div class='cc-next'><span class='cc-eyebrow'>Recommended goal</span><div class='big' style='font-size:1.7rem'>${(c['goal_usd'] if keep else rec.goal):,.0f}</div>"
                         f"<div class='sub'>{'Keep your goal: it is outside the riskiest group.' if keep else 'The highest goal that covers your minimum budget and stays out of the riskiest group.'} "
-                        f"Most likely {rec.mid:.0f}% (between {rec.low:.0f}% and {rec.high:.0f}%).</div></div>", unsafe_allow_html=True)
+                        f"Most likely {rec.mid:.0f}% (between {rec.low:.0f}% and {rec.high:.0f}%).{why}</div></div>", unsafe_allow_html=True)
         rows = ""
         for label, g in [("Minimum budget", c["min_budget_usd"]), ("Your goal", c["goal_usd"]), ("Your goal + 50%", c["goal_usd"] * 1.5)]:
             row = curve.iloc[(curve.goal - g).abs().argmin()]
@@ -476,9 +495,9 @@ if page == "How it works":
     T = META["test"]
     st.markdown("<div class='cc-h' style='font-size:1.3rem'>From public listings to one verdict</div>", unsafe_allow_html=True)
     st.markdown(f"""<div class='cc-pipe cc-fade'>
-<div class='box'><span class='cc-eyebrow'>1 · Data</span><b>489,000 campaigns</b><span class='cc-note'>Public Kickstarter listings, 24 snapshots from 2016 to 2026 (Web Robots).</span></div>
+<div class='box'><span class='cc-eyebrow'>1 · Data</span><b>489,000 campaigns collected</b><span class='cc-note'>Public Kickstarter listings, 24 snapshots from 2016 to 2026 (Web Robots). 430,000 have a final outcome.</span></div>
 <div class='box'><span class='cc-eyebrow'>2 · Inputs</span><b>32 things known before launch</b><span class='cc-note'>Goal, timing, title and blurb, track record, video and pre-launch page, type of product.</span></div>
-<div class='box'><span class='cc-eyebrow'>3 · Model</span><b>XGBoost, tested on the future</b><span class='cc-note'>Learned from {T['n_train']:,} campaigns of 2023–2024, tested on 2025 and January–June 2026.</span></div>
+<div class='box'><span class='cc-eyebrow'>3 · Model</span><b>XGBoost, tested on the future</b><span class='cc-note'>Learned from about 44,000 campaigns of 2023–2024, tested on 39,500 launched in 2025 and January–June 2026.</span></div>
 <div class='box'><span class='cc-eyebrow'>4 · Advice</span><b>Verdict, range, next step</b><span class='cc-note'>Coach first by rank, the chance as a range, one change at a time.</span></div></div>""", unsafe_allow_html=True)
     a, b = st.columns(2, gap="large")
     with a:

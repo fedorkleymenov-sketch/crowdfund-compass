@@ -27,5 +27,10 @@ Main file path: `app/app.py`. Python version: 3.13 (the models were saved with t
 - Model: XGBoost (class method) on 32 inputs known before launch, trained on 43,904 campaigns launched 2023–2024, tested on 2025 and January–June 2026 (AUC within category 0.86 and 0.87).
 - The data misses many failed campaigns, so the app shows chances as a range and decides "Coach first" by rank. Everything shown is a pattern in past campaigns, not a cause.
 
+## The data in numbers (used everywhere: app, docs, slides)
+- 489,000 campaigns collected (488,967), of which 430,000 have a final outcome (430,082).
+- About 44,000 used to train the final model (43,904, launched 2023–2024).
+- 39,500 used to test it (26,533 launched in 2025 and 12,990 in January–June 2026).
+
 ## AI use
 Code and analysis were developed with Claude (Anthropic, model Fable 5.2) in November 2026 and reviewed by the team. See `docs/ai_use_log.md`.

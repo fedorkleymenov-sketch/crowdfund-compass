@@ -1,6 +1,7 @@
 """preprocess.py — Crowdfund Compass app: turns the inputs for ONE planned campaign into the model's features.
 It reuses the same functions as the training code (features.py, modeling.py), so training and app agree."""
 import json, os
+from urllib.parse import quote
 import numpy as np, pandas as pd, joblib, xgboost as xgb
 import features as F, modeling as M
 

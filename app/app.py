@@ -45,6 +45,10 @@ def category_table():
 
 CATS = category_table()
 
+@st.cache_data
+def similar_table():
+    return pd.read_parquet(P.os.path.join(P.HERE, 'models', 'similar.parquet'))
+
 # Plain-language names for the model's inputs (used in "Why this result?")
 LABELS = {
     "text_score": "the type of product (as described in title and blurb)", "cat_id": "the category", "parent_c": "the main category",
@@ -115,7 +119,7 @@ st.title("🧭 Crowdfund Compass")
 st.markdown("A readiness check for Kickstarter campaigns **before** launch. Built from about 44,000 recent campaigns. "
             "It compares your plan with past campaigns. It does not promise an outcome.")
 
-page = st.sidebar.radio("Page", ["Launch check-up", "Goal optimizer", "Coach cohort view", "How it works"])
+page = st.sidebar.radio("Page", ["Launch check-up", "Goal optimizer", "Coach cohort view", "Similar campaigns", "Category benchmarks", "How it works"])
 st.sidebar.markdown("---")
 st.sidebar.markdown("<span class='cc-note'>HSG · Business Analytics & Data Science Applications · Group 11<br>"
                     "Kleymenov, Arcauz, Braun</span>", unsafe_allow_html=True)
@@ -336,10 +340,80 @@ if page == "Coach cohort view":
                         "and nearly all campaigns in that group failed. Patterns, not causes.</span>", unsafe_allow_html=True)
 
 
-#### Page 4: How it works
+#### Page 4: Similar campaigns (nearest neighbours)
 #########################################################
 
-elif page == "How it works":
+if page == "Similar campaigns":
+    c = campaign_inputs()
+    st.markdown("---")
+    st.subheader("Past campaigns most like yours")
+    same_country = st.checkbox("Only campaigns from the same country", False)
+    X = P.campaign_features(c, META, TEXT).iloc[0]
+    S = similar_table(); sm = META["similar"]
+    pool = S[S.parent_category == X.parent_category]
+    if same_country and (pool.country == c["country"]).sum() >= 20:
+        pool = pool[pool.country == c["country"]]
+    mine = {"log_goal_usd": X.log_goal_usd, "duration_days": X.duration_days, "log_prep_days": X.log_prep_days,
+            "log_prior": np.log10(X.creator_prior_n + 1), "prelaunch_activated": X.prelaunch_activated, "has_video": X.has_video,
+            "text_score": X.text_score, "first_timer": X.first_timer}
+    # distance on standardised values: every input counts the same
+    dist = sum(((pool[f].values - mine[f]) / sm["std"][f]) ** 2 for f in sm["features"])
+    near = pool.iloc[np.argsort(dist)[:10]].copy()
+    funded = int(near.success.sum())
+    st.markdown(f"<div class='cc-card'><span class='cc-big'>{funded} of 10</span> most similar past campaigns were funded."
+                f"<p class='cc-note' style='margin:.4rem 0 0 0'>Similar = same main category and closest on goal, length, preparation time, creator experience, "
+                f"video, pre-launch page and type of product. Our data misses many failed campaigns, so this count is on the optimistic side.</p></div>", unsafe_allow_html=True)
+    names = CATS.set_index("cat_id").name
+    show = pd.DataFrame({"Campaign": near.name.values, "Category": near.cat_id.map(names).fillna("").values, "Country": near.country.astype(str).values,
+                         "City": near.city.fillna("").values, "Launched": near.launch_year.values, "Goal (USD)": near.goal_usd.values,
+                         "Outcome": np.where(near.success == 1, "Funded", "Not funded"),
+                         "Find it": ["https://www.kickstarter.com/discover/advanced?term=" + P.quote(n) for n in near.name.values]})
+    st.dataframe(show, hide_index=True, width="stretch",
+                 column_config={"Find it": st.column_config.LinkColumn("Find it", display_text="Search on Kickstarter"),
+                                "Goal (USD)": st.column_config.NumberColumn(format="$%d")})
+    st.markdown(f"<span class='cc-note'>Drawn from {sm['n']:,} campaigns launched from 2023 to June 2026. Source: public Kickstarter listings collected by Web Robots "
+                f"(webrobots.io/kickstarter-datasets). No creator names are stored.</span>", unsafe_allow_html=True)
+
+
+#### Page 5: Category benchmarks
+#########################################################
+
+if page == "Category benchmarks":
+    st.subheader("Category benchmarks")
+    parents = sorted(META["official_rate"])
+    parent = st.selectbox("Main category", parents, index=parents.index("Games"))
+    rate = META["official_rate"][parent]; overall = 0.4273
+    c1, c2 = st.columns([1, 2])
+    c1.markdown(f"<div class='cc-card'><span class='cc-note'>Official funding rate, {parent}</span><br><span class='cc-big'>{rate * 100:.0f}%</span>"
+                f"<p class='cc-note' style='margin:.4rem 0 0 0'>Share of all {META['official_launched'][parent]:,} {parent} campaigns ever launched on Kickstarter that reached "
+                f"their goal. All categories: {overall * 100:.0f}%. This is an all-time average; recent rates are higher.</p></div>", unsafe_allow_html=True)
+    off = pd.DataFrame({"Category": parents, "rate": [META["official_rate"][p] * 100 for p in parents]})
+    off["picked"] = off.Category == parent
+    bars = alt.Chart(off).mark_bar().encode(
+        x=alt.X("rate:Q", title="Official funding rate, all time (%)", scale=alt.Scale(domain=[0, 80])), y=alt.Y("Category:N", sort="-x", title=None),
+        color=alt.condition(alt.datum.picked, alt.value(TEAL), alt.value("#C5CAD3")), tooltip=["Category", alt.Tooltip("rate:Q", format=".0f")])
+    c2.altair_chart(bars.properties(height=330), width="stretch")
+    st.markdown("<span class='cc-note'>Source: Kickstarter stats page, last updated 1 January 2026.</span>", unsafe_allow_html=True)
+
+    st.subheader(f"What funded {parent} campaigns look like")
+    st.markdown("<span class='cc-note'>From campaigns in our data that were funded, launched from 2023 to June 2026. We hold about 85% of all funded campaigns, "
+                "so these figures are reliable. We do not show funding rates from our data: it misses too many failed campaigns.</span>", unsafe_allow_html=True)
+    B = META["benchmarks"]; rows = [("All " + parent, B["parent"][parent])]
+    for _, r in CATS[CATS.parent == parent].iterrows():
+        if str(r.cat_id) in B["category"]: rows.append((r["name"], B["category"][str(r.cat_id)]))
+    table = pd.DataFrame([{"Category": n, "Funded campaigns": p["n"], "Typical goal (USD)": round(p["median_goal"]), "Typical amount raised (USD)": round(p["median_raised"]),
+                           "Typical length (days)": round(p["median_days"]), "With pre-launch page (%)": round(p["prelaunch"] * 100),
+                           "With video (%)": round(p["video"] * 100), "First-time creators (%)": round(p["first_timer"] * 100)} for n, p in rows])
+    st.dataframe(table, hide_index=True, width="stretch",
+                 column_config={"Typical goal (USD)": st.column_config.NumberColumn(format="$%d"), "Typical amount raised (USD)": st.column_config.NumberColumn(format="$%d")})
+    st.markdown("<span class='cc-note'>'Typical' = median. Many funded campaigns set a low goal on purpose and raise several times that amount. "
+                "Data: public Kickstarter listings collected by Web Robots (webrobots.io/kickstarter-datasets).</span>", unsafe_allow_html=True)
+
+
+#### Page 6: How it works
+#########################################################
+
+if page == "How it works":
     T = META["test"]
     st.subheader("How it works")
     st.markdown(f"""
@@ -347,7 +421,7 @@ elif page == "How it works":
 
 **The data.** Public Kickstarter listings collected by Web Robots, 24 snapshots from 2016 to 2026 (about 489,000 campaigns). The model is trained on {T['n_train']:,} campaigns launched in 2023–2024 and tested on {T['n_test_2025']:,} campaigns launched in 2025, which it had never seen.
 
-**The method.** 33 inputs known before launch, in six areas (ambition, timing, pitch, founder, presentation, product type). The model is XGBoost, a method from class, tuned with grid search and time-ordered cross-validation.
+**The method.** 32 inputs known before launch, in six areas (ambition, timing, pitch, founder, presentation, product type). The model is XGBoost, a method from class, tuned with grid search and time-ordered cross-validation.
 
 **Test results (2025).** AUC within category {T['auc_within_category_2025']:.2f} (January–June 2026: {T['auc_within_category_2026h1']:.2f}); accuracy {T['accuracy_2025'] * 100:.0f}% against 71% for always saying "funded". With only the six inputs of a typical public dataset the AUC is 0.75.
 
@@ -358,7 +432,7 @@ elif page == "How it works":
 - **Our data misses many failed campaigns.** We hold about 85% of all funded campaigns but about 42% of the failed ones, because Kickstarter's listings hide most campaigns that failed. Chances from our data alone are too high. That is why the app shows a range, with the lower value adjusted to Kickstarter's official funding rates.
 - **The ranking is more reliable than the level.** The model is good at telling stronger plans from weaker ones. The exact percentage is rough.
 - **Patterns, not causes.** "Campaigns with a pre-launch page were funded more often" does not mean a page causes funding.
-- **Most of the result is not in the founder's hands.** What is being made and the creator's track record explain 56% of the model's result; goal, timing, presentation and pitch explain 44%.
+- **Most of the result is not in the founder's hands.** What is being made and the creator's track record explain 57% of the model's result; goal, timing, presentation and pitch explain 43%.
 - **Funding is a market test,** not proof that a company will survive.
 - Data up to November 2026.
 """)
@@ -367,6 +441,7 @@ elif page == "How it works":
 | Step | Method | From class? |
 |---|---|---|
 | Prediction | XGBoost, compared with logistic regression, decision tree, random forest | Class |
+| Similar campaigns | Nearest neighbours | Beyond class |
 | Tuning and testing | Grid search, time-ordered cross-validation, confusion matrix, precision, recall, F1, ROC-AUC | Class |
 | Title and blurb | TF-IDF text mining | Class |
 | Explanation path | Decision tree, depth 3 | Class |

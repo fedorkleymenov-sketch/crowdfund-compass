@@ -8,7 +8,7 @@ DAY = 86400
 AREAS = {
     'Ambition':     ['log_goal_usd', 'goal_ratio', 'log_goal_per_day', 'duration_days', 'goal_is_round'],
     'Timing':       ['launch_month', 'launch_weekday', 'holiday_window', 'log_prep_days'],
-    'Pitch':        ['name_len', 'name_words', 'blurb_len', 'blurb_words', 'name_has_digit', 'name_has_symbol', 'name_caps_share',
+    'Pitch':        ['name_len', 'name_words', 'blurb_len', 'blurb_words', 'name_has_digit', 'name_has_symbol',
                      'blurb_flesch', 'blurb_sentiment', 'kw_exclaim', 'kw_you', 'kw_we', 'kw_new_first'],
     'Founder':      ['creator_prior_n', 'creator_prior_funded', 'creator_prior_rate', 'first_timer', 'log_days_since_last'],
     'Presentation': ['has_video', 'prelaunch_activated'],

@@ -6,6 +6,7 @@ History features (category norms, creator track record) only use campaigns
 that ENDED before the first day of the campaign's launch month (category
 tables) or before the launch itself (creator).
 
+Dropped on 16.11.2026: title capitalisation (`name_caps_share`), which made the Pitch score depend on Title Case.
 Dropped on 16.11.2026 after the Phase 2 check: the three crowding features and
 city size (no signal inside a category; crowding mostly reflected scraper coverage).
 
@@ -29,7 +30,7 @@ GROUPS = {
     'Ambition':      ['log_goal_usd', 'goal_ratio', 'log_goal_per_day', 'duration_days', 'goal_is_round'],
     'Timing':        ['launch_month', 'launch_weekday', 'holiday_window', 'log_prep_days'],
     'Pitch':         ['name_len', 'name_words', 'blurb_len', 'blurb_words', 'name_has_digit', 'name_has_symbol',
-                      'name_caps_share', 'blurb_flesch', 'blurb_sentiment', 'kw_exclaim', 'kw_you', 'kw_we', 'kw_new_first'],
+                      'blurb_flesch', 'blurb_sentiment', 'kw_exclaim', 'kw_you', 'kw_we', 'kw_new_first'],
     'Founder':       ['creator_prior_n', 'creator_prior_funded', 'creator_prior_rate', 'first_timer', 'log_days_since_last'],
     'Presentation':  ['has_video', 'prelaunch_activated'],          # modern model (launches 2023+) only
     'Market':        ['cat_id', 'parent_category', 'country', 'cat_rate_12m', 'cat_trend', 'log_cat_n_12m'],

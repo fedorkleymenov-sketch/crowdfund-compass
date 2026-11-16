@@ -24,7 +24,7 @@ Main file path: `app/app.py`. Python version: 3.13 (the models were saved with t
 
 ## Data and method in short
 - Data: public Kickstarter listings collected by Web Robots (24 snapshots, 2016–2026). Official funding rates: Kickstarter stats page (1 January 2026).
-- Model: XGBoost (class method) on 33 inputs known before launch, trained on 43,904 campaigns launched 2023–2024, tested on 2025 and January–June 2026 (AUC within category 0.86 and 0.87).
+- Model: XGBoost (class method) on 32 inputs known before launch, trained on 43,904 campaigns launched 2023–2024, tested on 2025 and January–June 2026 (AUC within category 0.86 and 0.87).
 - The data misses many failed campaigns, so the app shows chances as a range and decides "Coach first" by rank. Everything shown is a pattern in past campaigns, not a cause.
 
 ## AI use

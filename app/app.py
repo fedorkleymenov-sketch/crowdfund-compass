@@ -70,7 +70,7 @@ COUNTRY_CODES = {v.lower(): k for k, v in COUNTRY_NAMES.items()}
 DEFAULT = {"parent": "Games", "cat_name": "Tabletop Games", "country": "CH",
            "name": "Alpine Trails: A Cooperative Hiking Board Game for 1–4 Players",
            "blurb": "Plan your route, share your supplies and reach the summit together before the weather turns.",
-           "goal_usd": 15000.0, "min_budget_usd": 9000.0, "duration_days": 30, "launch_date": dt.date.today() + dt.timedelta(days=30),
+           "goal_usd": 15000.0, "min_budget_usd": 9000.0, "duration_days": 30, "launch_date": dt.date(2027, 1, 15),     # fixed, so the example gives the same result every day (slide 13)
            "prep_days": 30, "has_video": 1, "prelaunch": 0, "prior_n": 0, "prior_funded": 0, "days_since_last": 180}
 RANGE_LABELS = ("Lower value: adjusted to Kickstarter's official rates. Upper value: estimate from our data. "
                 "Middle estimate: halfway between the two; checked against one public figure only.")

@@ -68,6 +68,7 @@ h1, h2, h3, h4 {{color: {INK}; letter-spacing: -0.02em;}}
 .cc-scale, .cc-estimates, .cc-counts {{display:flex; justify-content:space-between; gap:.6rem; flex-wrap:wrap;}}
 .cc-scale, .cc-estimates {{font-size:.83rem; color:{MUTED};}}
 .cc-estimates b {{display:block; color:{INK}; font-size:1.1rem;}}
+.cc-estimates small {{display:block; font-size:.74rem; color:{MUTED};}}
 .cc-track {{position:relative; height:.65rem; margin-top:.35rem; border-radius:1rem; background:#E4E8EE;}}
 .cc-track i {{position:absolute; inset-block:0; opacity:.48; border-radius:1rem;}}
 .cc-track b {{position:absolute; top:-.25rem; bottom:-.25rem; width:3px; background:{NAVY}; transform:translateX(-50%);}}
@@ -111,15 +112,17 @@ def badge(verdict):
 def band(score):
     return (RED, "weak") if score <= 25 else (AMBER, "to improve") if score <= 60 else (GREEN, "strong")
 
-def range_bar(low, mid, high, colour):
-    """Place each estimate on the same 0–100 percent scale."""
-    return (f"<div class='cc-range' role='img' aria-label='Chance of reaching the goal: lower value {low:.0f}%, "
-            f"middle estimate {mid:.0f}%, upper value {high:.0f}%'>"
+def range_bar(low, mid, high, colour, low_is_official=True):
+    """Place each estimate on the same 0–100 percent scale. Each end is named by its source, whatever their order."""
+    src_low, src_high = ("adjusted to official rates", "from our data") if low_is_official else ("from our data", "adjusted to official rates")
+    return (f"<div class='cc-range' role='img' aria-label='Chance of reaching the goal: lower value {low:.0f}% ({src_low}), "
+            f"middle estimate {mid:.0f}%, upper value {high:.0f}% ({src_high})'>"
             f"<div class='cc-scale'><span>0%</span><span>100%</span></div>"
             f"<div class='cc-track'><i style='left:{low}%;right:{100-high}%;background:{colour}'></i>"
             f"<b style='left:{mid}%'></b></div></div>"
-            f"<div class='cc-estimates'><span>Lower value <b>{low:.0f}%</b></span>"
-            f"<span>Middle estimate <b>{mid:.0f}%</b></span><span>Upper value <b>{high:.0f}%</b></span></div>")
+            f"<div class='cc-estimates'><span>Lower value <b>{low:.0f}%</b><small>{src_low}</small></span>"
+            f"<span style='text-align:center'>Middle estimate <b>{mid:.0f}%</b><small>halfway between</small></span>"
+            f"<span style='text-align:right'>Upper value <b>{high:.0f}%</b><small>{src_high}</small></span></div>")
 
 def bar(title, sub, score, note=""):
     c, word = band(score)

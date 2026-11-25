@@ -1,7 +1,7 @@
-# Semantic Layer: Crowdfund Compass (Kickstarter) — v1.4, 25.11.2026
+# Semantic Layer: Crowdfund Compass (Kickstarter) — v1.5, 25.11.2026
 
 Says what we mean by our data. Never change a definition silently; if a metric is not defined here, propose it and ask first.
-v1.0–v1.2 approved by Fedor on 16.11. Changes in v1.3: title capitalisation dropped (32 features), goal rule, "most likely" value, verdict rule, neutral first-campaign display. Change in v1.4 (approved by Fedor on 25.11): "most likely" renamed "middle estimate"; the coach claim is always stated as the result of a re-weighted test on 2025 campaigns.
+v1.0–v1.2 approved by Fedor on 16.11. Changes in v1.3: title capitalisation dropped (32 features), goal rule, "most likely" value, verdict rule, neutral first-campaign display. Change in v1.4 (approved by Fedor on 25.11): "most likely" renamed "middle estimate"; the coach claim is always stated as the result of a re-weighted test on 2025 campaigns. Change in v1.5 (approved by Fedor on 25.11): verdict and coaching slots separated; gains measured on the middle estimate; range ends named by source.
 Data: 24 Web Robots scrapes of public Kickstarter listings (2016-03 to 2026-11), merged by `merge_v2.py` into one row per project. Official benchmark: Kickstarter stats page, last updated 01.01.2026.
 
 ## 1. Terms: file vs. business
@@ -44,7 +44,8 @@ Data: 24 Web Robots scrapes of public Kickstarter listings (2016-03 to 2026-11),
 10. **Chances are shown as a range with a middle.** Upper value: calibrated probability in our sample. Lower value: the same after shifting the odds, per main category, by official odds ÷ sample odds. "Middle estimate": halfway between the two on the odds scale, checked against one public figure only. Never called "most likely".
 11. **Founder history stays in the model**, but its raw funded percentages are not shown. A first campaign is shown neutrally, without a score.
 12. **Goal rule.** The model may only learn that a higher goal lowers the chance.
-13. **Verdict.** Coach first = riskiest share of the cohort ranked by the lower value (default 30%; single check-up: lower value below 11.5%). Adjust = one change is associated with at least 5 points more. Launch = otherwise.
+13. **Verdict and coaching slots (v1.5, 25.11).** Verdict, the same on every screen: Coach first = lower value below 11.5%; Adjust = otherwise, if one change adds at least 5 points to the middle estimate (before rounding); Launch = otherwise. Coaching slots (Coach view): the riskiest teams ranked by the lower value, up to the coach's capacity (default 30%); slots never change a verdict.
+13a. **Range ends are named by source** ("from our data", "adjusted to official rates"), not by position: in Dance the adjusted estimate is the higher one.
 14. **Advice is association.** A suggested change is worded "campaigns that did this were funded more often", never as a promise.
 
 ## 4. Metrics

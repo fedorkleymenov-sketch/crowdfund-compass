@@ -18,6 +18,10 @@ AREAS = {
 def _logit(p):
     p = np.clip(p, 1e-6, 1 - 1e-6); return np.log(p / (1 - p))
 
+def middle(a, b):
+    """Middle estimate: halfway between the two estimates on the log-odds scale."""
+    return 1 / (1 + np.exp(-(_logit(np.asarray(a, float)) + _logit(np.asarray(b, float))) / 2))
+
 class Advisor:
     def __init__(self, art):
         self.model, self.feats, self.platt, self.sample_rate = art['model'], art['features'], art['platt'], art['sample_rate']
@@ -25,11 +29,17 @@ class Advisor:
         self.cut = art.get('verdict')                 # dict with the reference cut for single check-ups
 
     # ---- probabilities: high end = calibrated in our sample, low end = shifted to Kickstarter's official rates
-    def chances(self, df):
+    def estimates(self, df):
+        """The two estimates by source: (calibrated chance in our data, the same shifted to Kickstarter's official rates).
+        Usually the official one is lower, but in categories where the official rate is higher than in our data it is higher."""
         raw = self.model.predict_proba(df[self.feats].astype(float))[:, 1]
-        high = self._calibrate(raw)
-        low = M.prior_shift(high, df.parent_category.values, self.sample_rate)
-        return np.minimum(low, high), np.maximum(low, high)          # (low end, high end)
+        ours = self._calibrate(raw)
+        official = M.prior_shift(ours, df.parent_category.values, self.sample_rate)
+        return ours, official
+
+    def chances(self, df):
+        ours, official = self.estimates(df)
+        return np.minimum(ours, official), np.maximum(ours, official)          # (low end, high end), whatever the source
 
     def _calibrate(self, raw):
         """Platt scaling: chance = 1 / (1 + exp(-(a * logit(raw) + b))). Stored either as a fitted model or as the two numbers."""
@@ -95,20 +105,23 @@ class Advisor:
         return int(launch <= x <= launch + pd.Timedelta(days=float(duration)))
 
     def fixes(self, r, min_budget_usd=None, top=3, min_gain=2.0):
-        """Best single change per lever, sorted by gain in the chance of funding (points, high end of the range)."""
+        """Best single change per lever, sorted by gain in the MIDDLE ESTIMATE (points), the number the app shows.
+        'gain' is kept unrounded, so thresholds (2 points to show, 5 points for Adjust) are applied before any rounding."""
         base = pd.DataFrame([r]); var = self._variants(r, min_budget_usd)
         if not var: return []
         V = pd.DataFrame([x for _, _, x in var])
         lo0, hi0 = self.chances(base); lo, hi = self.chances(V)
-        t = pd.DataFrame({'lever': [a for a, _, _ in var], 'change': [b for _, b, _ in var], 'gain': (hi - hi0[0]) * 100,
-                          'low': lo * 100, 'high': hi * 100})
+        mid0, mid = middle(lo0, hi0)[0], middle(lo, hi)
+        t = pd.DataFrame({'lever': [a for a, _, _ in var], 'change': [b for _, b, _ in var], 'gain': (mid - mid0) * 100,
+                          'low': lo * 100, 'high': hi * 100, 'mid': mid * 100, 'mid_before': mid0 * 100})
         t = t.sort_values('gain', ascending=False).drop_duplicates('lever')
-        return t[t.gain >= min_gain].head(top).round(1).to_dict('records')
+        return t[t.gain >= min_gain].head(top).to_dict('records')
 
     # ---- verdict
     def verdict(self, low_end, fixes, in_riskiest_share=None):
-        """Coach first: among the riskiest campaigns (by cohort rank, or below the reference cut for a single check-up).
-        Adjust: not among them, but one change adds at least `adjust_gain` points. Launch: otherwise."""
+        """The assessment of one campaign. Coach first: lower value below the reference cut (11.5%).
+        Adjust: not that, but one change adds at least `adjust_gain` points to the middle estimate. Launch: otherwise.
+        Coaching slots in a cohort are a separate decision (riskiest teams by rank, up to the coach's capacity)."""
         risky = in_riskiest_share if in_riskiest_share is not None else (low_end < self.cut['reference_cut'])
         if risky: return 'Coach first'
         if fixes and fixes[0]['gain'] >= self.cut['adjust_gain']: return 'Adjust'

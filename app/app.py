@@ -72,8 +72,8 @@ DEFAULT = {"parent": "Games", "cat_name": "Tabletop Games", "country": "CH",
            "blurb": "Plan your route, share your supplies and reach the summit together before the weather turns.",
            "goal_usd": 15000.0, "min_budget_usd": 9000.0, "duration_days": 30, "launch_date": dt.date(2027, 1, 15),     # fixed, so the example gives the same result every day (slide 13)
            "prep_days": 30, "has_video": 1, "prelaunch": 0, "prior_n": 0, "prior_funded": 0, "days_since_last": 180}
-RANGE_LABELS = ("Lower value: adjusted to Kickstarter's official rates. Upper value: estimate from our data. "
-                "Middle estimate: halfway between the two; checked against one public figure only.")
+RANGE_LABELS = ("The two ends are two estimates: one from our data, one adjusted to Kickstarter's official funding rate for the category "
+                "(usually the lower one, because our data misses failed campaigns). Middle estimate: halfway between the two; checked against one public figure only.")
 TIP_CHANCE = "The range is wide because our data shows only about 4 in 10 failed campaigns. " + RANGE_LABELS
 COACH_TEST = ("In a test on 2025 campaigns, re-weighted to Kickstarter's official mix, a coach who sees the riskiest "
               "30% reached about half of all failures, and about 95% of the flagged campaigns failed. A new cohort may differ.")
@@ -115,6 +115,7 @@ def check(c):
     """Run the whole check for one campaign: features -> chance range -> areas -> fixes -> verdict."""
     X = P.campaign_features(c, META, TEXT)
     low, high = advisor.chances(X)
+    ours, official = (float(v[0]) for v in advisor.estimates(X))
     areas = advisor.area_scores(X).iloc[0]
     every = advisor.fixes(X.iloc[0], min_budget_usd=c["min_budget_usd"], top=20, min_gain=-999)      # best option per lever, all levers
     fixes = [f for f in every if f["gain"] >= 2][:3]
@@ -122,6 +123,7 @@ def check(c):
     for f in every:
         best[AREA_OF[f["lever"]]] = max(best.get(AREA_OF[f["lever"]], 0), f["gain"])
     return {"X": X, "area_best": best, "low": float(low[0]), "high": float(high[0]), "mid": middle(float(low[0]), float(high[0])), "areas": areas,
+            "low_is_official": official <= ours,
             "fixes": fixes, "verdict": advisor.verdict(low[0], fixes), "shap": advisor.shap(X).iloc[0].sort_values()}
 
 def step(n, title):
@@ -248,13 +250,13 @@ if page == "Check-up":
     with right:
         st.markdown(f"<div id='result' style='scroll-margin-top:1rem'></div><div class='cc-card cc-fade'><div style='display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:.5rem'>"
                     f"<span class='cc-eyebrow'>{ui.tip('Chance of reaching the goal', TIP_CHANCE)}</span>{ui.badge(r['verdict'])}</div>"
-                    f"{ui.range_bar(r['low'] * 100, r['mid'] * 100, r['high'] * 100, colour)}"
+                    f"{ui.range_bar(r['low'] * 100, r['mid'] * 100, r['high'] * 100, colour, r['low_is_official'])}"
                     f"<p style='text-align:center;margin:.5rem 0 0 0'>{explain}</p></div>", unsafe_allow_html=True)
         if r["fixes"]:
             f = r["fixes"][0]
             st.markdown(f"<div class='cc-next cc-fade'><span class='cc-eyebrow'>Best next step</span><div class='big'>{f['change']}</div>"
-                        f"<div class='sub'>Campaigns that did this were funded more often: about +{f['gain']:.0f} points "
-                        f"(middle estimate {r['mid'] * 100:.0f}% → {middle(f['low'] / 100, f['high'] / 100) * 100:.0f}%).</div></div>", unsafe_allow_html=True)
+                        f"<div class='sub'>Campaigns that did this were funded more often: middle estimate {f['mid_before']:.0f}% → {f['mid']:.0f}% "
+                        f"(about +{round(f['mid']) - round(f['mid_before'])} points).</div></div>", unsafe_allow_html=True)
         else:
             st.markdown("<div class='cc-card cc-fade'><span class='cc-eyebrow'>Best next step</span><div class='cc-h'>No single change stands out</div>"
                         "<span class='cc-note'>Changing the goal, length, launch day, video, pre-launch page, preparation time, title or blurb is not linked to 2 more points.</span></div>",
@@ -273,7 +275,7 @@ if page == "Check-up":
         st.caption(f"{TIP_CHANCE} {FOUNDER_CONTROL}.")
         if len(r["fixes"]) > 1:
             cards = "".join(f"<div class='cc-mini'><b>{f['change']}</b><br><span class='cc-note'>middle estimate</span> "
-                            f"<span class='cc-arrow'>{r['mid'] * 100:.0f}% → {middle(f['low'] / 100, f['high'] / 100) * 100:.0f}%</span></div>" for f in r["fixes"][1:])
+                            f"<span class='cc-arrow'>{f['mid_before']:.0f}% → {f['mid']:.0f}%</span></div>" for f in r["fixes"][1:])
             st.markdown(f"<span class='cc-eyebrow'>Other changes</span><div class='cc-grid' style='margin:.5rem 0 .9rem 0'>{cards}</div>", unsafe_allow_html=True)
         if any(f["lever"] in ("Pre-launch page", "Preparation") for f in r["fixes"]):
             st.markdown("<p class='cc-note'>A pre-launch page and more preparation time stand for groundwork: building an audience before launch. "
@@ -390,7 +392,7 @@ def score_cohort(df):
             rows.append({"Campaign": c["name"], "Middle estimate (%)": round(r["mid"] * 100), "Chance (low)": round(r["low"] * 100),
                          "Chance (high)": round(r["high"] * 100), "Weakest area": min(LEVERS, key=lambda a: r["areas"][a]),
                          "Top fix": r["fixes"][0]["change"] if r["fixes"] else "No single change stands out",
-                         "Gain (points)": round(r["fixes"][0]["gain"]) if r["fixes"] else 0,
+                         "Gain (points)": round(r["fixes"][0]["gain"]) if r["fixes"] else 0, "Assessment": r["verdict"],
                          "Product type rarely funded": "yes" if r["areas"]["Market"] <= 15 else "", "_low": r["low"]})
         except KeyError:
             problems.append(f"Row {i + 1}: category '{x.main_category} / {x.category}' not found")
@@ -417,14 +419,16 @@ if page == "Coach view":
     else:
         if message: st.warning(message)
         out = scored.copy()
-        n_coach = int(round(len(out) * capacity))                                   # the coach's capacity decides who is 'Coach first'
-        out["Verdict"] = np.where(out.index < n_coach, "Coach first", np.where(out["Gain (points)"] >= META["verdict"]["adjust_gain"], "Adjust", "Launch"))
+        n_coach = int(round(len(out) * capacity))      # coaching slots: the riskiest teams by rank, up to the coach's capacity
         out.insert(0, "Risk rank", out.index + 1); out = out.drop(columns="_low")
+        out["Coaching slot"] = np.where(out.index < n_coach, "yes", "")      # the assessment of each campaign does not depend on the slider
+        out["Verdict"] = out.pop("Assessment")
         counts = out["Verdict"].value_counts()
         summary = " ".join(f"<span>{ui.badge(v)} {counts.get(v, 0)}</span>" for v in ("Coach first", "Adjust", "Launch"))
-        st.markdown(f"<div class='cc-counts'>{summary}</div>", unsafe_allow_html=True)
-        st.caption(RANGE_LABELS)
-        cutoff = f"<div class='cc-cutoff'>Coach capacity: {n_coach} teams</div>"
+        st.markdown(f"<div class='cc-counts'>{summary}<span class='cc-note'>· coaching slots: {n_coach} of {len(out)}</span></div>", unsafe_allow_html=True)
+        st.caption("The verdict of each campaign is the same as in its check-up and does not change with the slider. The slider only decides "
+                   "how many of the riskiest teams get a coaching slot (above the line). " + RANGE_LABELS)
+        cutoff = f"<div class='cc-cutoff'>Coach capacity: {n_coach} {'team' if n_coach == 1 else 'teams'} · the teams above this line get a coaching slot</div>"
         if n_coach == 0:
             st.markdown(cutoff, unsafe_allow_html=True)
         for _, row in out.iterrows():
@@ -526,7 +530,7 @@ if page == "How it works":
 <div class='box'><span class='cc-eyebrow'>1 · Data</span><b>489,000 campaigns collected</b><span class='cc-note'>Public Kickstarter listings, 24 snapshots from 2016 to 2026 (Web Robots). 430,000 have a final outcome.</span></div>
 <div class='box'><span class='cc-eyebrow'>2 · Inputs</span><b>32 things known before launch</b><span class='cc-note'>Goal, timing, title and blurb, track record, video and pre-launch page, type of product.</span></div>
 <div class='box'><span class='cc-eyebrow'>3 · Model</span><b>XGBoost, tested on the future</b><span class='cc-note'>Learned from about 44,000 campaigns of 2023–2024, tested on 39,500 launched in 2025 and January–June 2026.</span></div>
-<div class='box'><span class='cc-eyebrow'>4 · Advice</span><b>Verdict, range, next step</b><span class='cc-note'>Coach first by rank, the chance as a range, one change at a time.</span></div></div>""", unsafe_allow_html=True)
+<div class='box'><span class='cc-eyebrow'>4 · Advice</span><b>Verdict, range, next step</b><span class='cc-note'>A verdict per plan, the chance as a range, one change at a time, coaching slots by rank.</span></div></div>""", unsafe_allow_html=True)
     a, b = st.columns(2, gap="large")
     with a:
         tip_auc = "Take one funded and one failed campaign from the same category: how often does the model give the funded one the higher score? 0.5 = guessing, 1 = perfect."
@@ -537,9 +541,10 @@ if page == "How it works":
                     f"{acc('6 inputs of a typical public dataset', 0.75, '#CBD3DC')}{acc('Our 32 inputs', T['auc_within_category_2025'], ui.TEAL)}"
                     f"<span class='cc-note'>Bars run from 0.5 (guessing) to 1 (perfect). Campaigns launched in 2025, which the model had never seen. "
                     f"January–June 2026: {T['auc_within_category_2026h1']:.2f}. Accuracy {T['accuracy_2025'] * 100:.0f}% against 71% for always saying \"funded\".</span></div>", unsafe_allow_html=True)
-        st.markdown(f"<div class='cc-card'><span class='cc-eyebrow'>The verdict rule</span><p style='margin:.5rem 0'>{ui.badge('Coach first')} among the riskiest 30% of a cohort "
-                    f"(single check: lower value below {META['verdict']['reference_cut'] * 100:.1f}%)</p><p style='margin:.5rem 0'>{ui.badge('Adjust')} one change is linked to at least "
-                    f"{META['verdict']['adjust_gain']:.0f} more points</p><p style='margin:.5rem 0'>{ui.badge('Launch')} everything else</p></div>", unsafe_allow_html=True)
+        st.markdown(f"<div class='cc-card'><span class='cc-eyebrow'>The verdict rule</span><p style='margin:.5rem 0'>{ui.badge('Coach first')} lower value below {META['verdict']['reference_cut'] * 100:.1f}%: "
+                    f"among the riskiest plans</p><p style='margin:.5rem 0'>{ui.badge('Adjust')} one change is linked to at least "
+                    f"{META['verdict']['adjust_gain']:.0f} more points</p><p style='margin:.5rem 0'>{ui.badge('Launch')} everything else</p><span class='cc-note'>In Coach view, coaching slots go to the riskiest teams by rank, up to the coach's capacity "
+                    f"(default {META['verdict']['default_capacity'] * 100:.0f}%, adjustable). The slots do not change any verdict.</span></div>", unsafe_allow_html=True)
     with b:
         cal = pd.concat([pd.DataFrame(META["calibration"]["before"], columns=["x", "y"]).assign(s="before correction"),
                          pd.DataFrame(META["calibration"]["after"], columns=["x", "y"]).assign(s="after correction")])

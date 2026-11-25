@@ -11,4 +11,5 @@ Course rule: "Use whatever you want, but cite correctly."
 | 25.11.2026 | Claude (Anthropic, model Opus 5.5) | Prompts for the ChatGPT review; testing and merging the Decision Desk version; deck, script and docs updated to the new wording |
 | 25.11.2026 | ChatGPT (OpenAI, GPT-6.2 Astra) | Examiner-style review in a fresh chat (grade, criteria, correctness audit, hardest questions, action plan); first computation of the comparison with simple rules |
 | 25.11.2026 | Claude (Anthropic, model Opus 5.5) | Checked the review against the code; fixed verdict vs coaching slots, gain scale and range labels; reproduced the simple-rules comparison; deck restructure, script draft 3, docs and report |
+| 25.11.2026 | Claude (Anthropic, model Opus 5.5) | Small app fixes from the review; frozen re-test of the coaching rule on January–June 2026 |
 All numbers were computed with code on the data. Decisions on scope, definitions, metrics and the verdict rule were taken by the team at each checkpoint.

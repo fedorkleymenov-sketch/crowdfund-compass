@@ -27,7 +27,7 @@ Data: 24 Web Robots scrapes of public Kickstarter listings (2016-03 to 2026-11),
 | Project (campaign) | `id`, `name`, `blurb`, `slug` | 488,967 rows; 430,082 finished |
 | Creator | `creator_id` | 323,236 creators with a finished project; 43,923 with more than one. Never shown or stored in the app |
 | Category | `parent_category` → `cat_id` | 15 main categories, 174 category ids (164 names) |
-| Place | `country`, `city` | 25 countries. City is shown for similar campaigns, not a model feature |
+| Place | `country`, `city` | 25 countries. City is not used (no signal); similar campaigns show category, country, year and goal |
 | Time | `launched_at` | Every "by year/month" statement uses the **launch date** |
 
 ## 3. General rules
@@ -39,7 +39,7 @@ Data: 24 Web Robots scrapes of public Kickstarter listings (2016-03 to 2026-11),
 5. **Outliers are flagged, not deleted.**
 6. **Test window.** Test years are launches of 2025 and of January–June 2026. Launches from July 2026 on are excluded everywhere: they ended after the last full crawl (12.08.2026).
 7. **Crawls.** Full: about 185,000–211,000 projects. Partial: 2021–2023 scrapes, 2026-10-12, 2026-11-16.
-8. **Headline metric: AUC within category** (inside each `cat_id`, averaged by size), with AUC within main category and overall AUC next to it.
+8. **Headline metric: AUC within category** (inside each `cat_id` with both funded and failed campaigns in the test year, averaged by size; 163 categories in 2025), with AUC within main category and overall AUC next to it.
 9. **Results are also reported separately** for the 29 capped categories and the rest.
 10. **Chances are shown as a range with a middle.** Upper value: calibrated probability in our sample. Lower value: the same after shifting the odds, per main category, by official odds ÷ sample odds. "Middle estimate": halfway between the two on the odds scale, checked against one public figure only. Never called "most likely".
 11. **Founder history stays in the model**, but its raw funded percentages are not shown. A first campaign is shown neutrally, without a score.

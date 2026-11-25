@@ -504,7 +504,7 @@ if page == "Benchmarks":
         color=alt.condition(alt.datum.picked, alt.value(ui.TEAL), alt.value("#CBD3DC")), tooltip=["Category", alt.Tooltip("rate:Q", title="Funded (%)", format=".0f")])
     b.altair_chart(chart.properties(height=360), width='stretch')
     st.markdown(f"<div class='cc-h'>What funded {parent} campaigns look like</div><span class='cc-note'>From funded campaigns in our data, launched from 2023 to June 2026. "
-                "We hold about 85% of all funded campaigns, so these figures are reliable. Funding rates from our data are not shown: it misses too many failed campaigns.</span>",
+                "We hold about 85% of all funded campaigns, so these figures describe funded campaigns fairly well, though coverage differs by year and category. Funding rates from our data are not shown: it misses too many failed campaigns.</span>",
                 unsafe_allow_html=True)
     B = META["benchmarks"]; rows = [("All " + parent, B["parent"][parent])]
     for _, r in CATS[CATS.parent == parent].iterrows():

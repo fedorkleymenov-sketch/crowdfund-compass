@@ -1,7 +1,7 @@
 # Model results — Crowdfund Compass (final, 16.11.2026)
 
 Code: `app/features.py`, `app/modeling.py`, notebook `notebooks/03_models.ipynb`.
-All figures are computed on our sample, which over-represents funded campaigns. **Headline metric: AUC within category** (inside each of the 174 categories, averaged by size).
+All figures are computed on our sample, which over-represents funded campaigns. **Headline metric: AUC within category** (inside each category that has both funded and failed campaigns in the test year, averaged by size: in 2025, 163 categories with 26,508 of the 26,533 campaigns).
 
 ## 1. Design
 - Splits by launch date: train 2023–2024 (43,904 campaigns; video and pre-launch page known for all), validation 2024 for selection and calibration (model trained on 2023), test 2025 (26,533; 70.8% funded) and January–June 2026 (12,990; 74.9%).
@@ -47,22 +47,25 @@ Two recent years do as well as all history; video and pre-launch page add about 
 **Business metric:** if a coach takes the 30% of a cohort the model rates riskiest, the share of later failures among them is 75.9% in 2025 and 81.0% in Jan–Jun 2026 in our sample (random: 30%; category-rate baseline: 62.4% / 66.3%; 6 features: 67.4% / 69.6%). Inside every category: 52%. In a cohort with Kickstarter's official mix of outcomes the figure is 51% (see `explanation_and_verdict.md`).
 
 ## 4. Probabilities
-- **Calibration (beyond class):** Platt scaling learned on 2024. Brier on 2025: 0.105 → 0.103. After calibration, predicted chances are within 5 points of observed rates in every tenth of the scale (before: up to 9).
+- **Calibration (beyond class):** Platt scaling learned on 2024. Brier on 2025: 0.105 → 0.103. After calibration, predicted chances are within 5 points of observed rates in every tenth of the scale (before: up to 9.5).
 - **Level correction (beyond class):** per main category, odds × [official odds ÷ sample odds], with Kickstarter's official all-time rates (stats page, 01.01.2026). 2025 test: mean chance 69% in our sample → 52% corrected. Median width of the range 14.5 points.
 - **Check of the correction:** after re-weighting the 2025 sample to the official mix, the mean corrected chance per main category is on average 6 points from the official rate, mostly below it.
 - **Middle of the range:** tabletop games launched in 2024, official 80% funded (5,314 of 6,646). Our lower value 66%, middle 78%, upper 86%. One benchmark only.
-- **Down-weighting instead of shifting** gives the same ranking (0.859) and probabilities that correlate 0.98 with the shifted ones. The shift is kept: simpler to explain.
+- **Down-weighting instead of shifting** gives the same within-category AUC (0.859) and probabilities that correlate 0.98 with the shifted ones (not an identical queue). The shift is kept: simpler to explain.
 
 ## 5. Support models
 - **Money raised (class: linear regression on log10 USD):** funded campaigns only: R² 0.675, typical error factor ×1.8 (category-median baseline ×2.7). Not used in the app.
 - **Similar campaigns (10 nearest neighbours in the same main category, beyond class):** the funded share of the neighbours alone predicts 2025 outcomes with AUC within category 0.791.
 - Archetypes (k-means) were tested and cut: silhouette 0.13–0.17.
 
+## 5b. Equal-capacity comparison with simple rules (added 25.11)
+Coach capacity 30%, 2025 launches re-weighted to Kickstarter's official mix (56% fail). Share of all failures reached / share of selected teams that failed: random 30.0% / 56.0%; lowest official main-category rate 37.7% / 70.4%; highest goal for the category 37.3% / 69.7%; lowest 2023–24 subcategory rate in our data 44.5% / 83.0%; **our model (ranked by the lower value) 51.1% / 95.4%**; maximum possible 53.6% / 100%. Per 100 campaigns: about 29 failing teams found by the model against 25 with the best simple rule. Ties at the cutoff are taken proportionally. Script `stage6_rules.py`; first computed by an outside review (ChatGPT) and reproduced here with the same result. This measures who gets flagged, not how much coaching helps.
+
 ## 6. Honest reading
 1. The model clearly beats both baselines and the 6-feature version (0.753 → 0.859).
 2. **The model family hardly matters.** Logistic regression equals XGBoost and the forest; LightGBM + Optuna adds 0.007. The features carry the result.
 3. **More history does not help** inside a category: 44,000 recent campaigns do as well as 385,000 from all years.
 4. **The text score is the strongest feature, and it captures what is being made**, not how well it is written (tarot, 5e, comic, enamel pins vs app, platform, software, podcast).
-5. **Scores are still inflated.** Within-category AUC rises in every walk-forward year (0.79 in 2019 to 0.86 in 2026) and is higher in capped categories. The failed campaigns we hold are the visible ones. We cannot measure the remaining bias.
+5. **Scores are still inflated.** Within-category AUC rises over the walk-forward years (0.79 in 2019 to 0.86 in 2026, with a dip in 2023) and is higher in capped categories. The failed campaigns we hold are the visible ones. We cannot measure the remaining bias.
 6. Titles and blurbs come from the last scrape; 3.2% of funded and 1.5% of failed campaigns changed their title between a live sighting and the end.
 7. The level correction is rough: official rates are all-time averages per main category.

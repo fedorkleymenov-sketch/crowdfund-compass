@@ -13,7 +13,7 @@ First step before any training (as in the professor's VibeCodingML). Rule: a fea
 | `goal` + `static_usd_rate` | Feature → goal in USD | Founder's choice. The rate is fixed at launch |
 | `currency` | Excluded | Duplicates `country` |
 | `country` | Feature | Known before launch |
-| `city`, `loc_type`, `loc_state` | Not a model feature | City size had no signal; city is shown for similar campaigns |
+| `city`, `loc_type`, `loc_state` | Not a model feature | City size had no signal; city is not used in the app |
 | `cat_id` / `cat_slug`, `parent_category` | Feature (category labels) | Founder's choice |
 | `subcategory` | Display only | Name is ambiguous for 7 names |
 | `creator_id` | Excluded as a column; **source** of founder history | History only from campaigns ended before this launch. Never shown in the app |

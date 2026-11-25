@@ -378,7 +378,7 @@ EXAMPLE_COHORT = pd.DataFrame([
 ], columns=COHORT_COLUMNS)
 
 @st.cache_data(show_spinner="Scoring the cohort…")
-def score_cohort(df):
+def score_cohort(df, code_version=CODE_VERSION):
     """Match the uploaded columns to the expected ones and score every campaign (cached per file)."""
     df = df.rename(columns={col: col.strip().lower().replace(" ", "_") for col in df.columns})
     missing = [col for col in COHORT_COLUMNS if col not in df.columns]
@@ -419,7 +419,7 @@ if page == "Coach view":
     data = pd.read_csv(uploaded) if uploaded is not None else EXAMPLE_COHORT
     if uploaded is None:
         st.caption("No file yet: showing the example cohort of 6 campaigns.")
-    scored, message = score_cohort(data)
+    scored, message = score_cohort(data, CODE_VERSION)
     if scored is None:
         st.error(message)
     else:

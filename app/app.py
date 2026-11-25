@@ -292,7 +292,7 @@ if page == "Check-up":
             st.markdown(f"<span class='cc-eyebrow'>Other changes</span><div class='cc-grid' style='margin:.5rem 0 .9rem 0'>{cards}</div>", unsafe_allow_html=True)
         if any(f["lever"] in ("Pre-launch page", "Preparation") for f in r["fixes"]):
             st.markdown("<p class='cc-note'>A pre-launch page and more preparation time stand for groundwork: building an audience before launch. "
-                        "Opening a page the day before launch will not add these points.</p>", unsafe_allow_html=True)
+                        "Our data cannot tell whether opening a page shortly before launch would add these points.</p>", unsafe_allow_html=True)
         founder = ("<b>First campaign.</b> No track record yet, so preparation matters more." if c["prior_n"] == 0 else
                    f"<b>Track record:</b> {c['prior_funded']} of {c['prior_n'] - c.get('prior_cancelled', 0)} earlier campaigns that ended funded or not funded "
                    f"({ui.band(float(r['areas']['Founder']))[1]} compared with other creators).")
@@ -302,7 +302,7 @@ if page == "Check-up":
                     f"<div style='margin-top:.5rem'><span class='cc-chip'>{founder}</span><span class='cc-chip'>{product}</span></div>", unsafe_allow_html=True)
         if market <= 15:
             st.warning("**Note for coaches:** this type of product has rarely been funded on Kickstarter (typical examples: apps, software, web platforms, "
-                       "restaurants, drinks). Changing the campaign set-up will not fix that. Consider whether Kickstarter is the right route.")
+                       "restaurants, drinks). In past campaigns, changing the set-up rarely made up for that. Consider whether Kickstarter is the right route.")
         with st.expander("Why this result?"):
             up = r["shap"][r["shap"] > 0.03].sort_values(ascending=False).head(4); down = r["shap"][r["shap"] < -0.03].head(4)
             a, b = st.columns(2)

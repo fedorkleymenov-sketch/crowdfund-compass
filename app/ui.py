@@ -1,6 +1,6 @@
 """ui.py — Crowdfund Compass: the visual layer (styles and small HTML components).
 Nothing here computes a number. It only decides how numbers from the model are shown."""
-import math
+from html import escape
 import altair as alt
 
 NAVY, TEAL, TEAL_SOFT, INK, MUTED, LINE, BG = "#0B1F33", "#0F6E56", "#E7F4EF", "#0B1F33", "#5B6B7C", "#E4E8EE", "#F7F8FA"
@@ -64,7 +64,19 @@ h1, h2, h3, h4 {{color: {INK}; letter-spacing: -0.02em;}}
 .cc-pipe .box {{background: #fff; border: 1px solid {LINE}; border-radius: 14px; padding: 1rem; position: relative;}}
 .cc-pipe .box b {{display: block; color: {INK}; margin-bottom: .25rem;}}
 .cc-pipe .box:not(:last-child)::after {{content: '→'; position: absolute; right: -.75rem; top: 42%; color: {TEAL}; font-weight: 800; z-index: 2;}}
-.cc-col h4 {{margin: 0 0 .6rem 0; font-size: .95rem;}}
+.cc-range {{margin: .8rem .15rem;}}
+.cc-scale, .cc-estimates, .cc-counts {{display:flex; justify-content:space-between; gap:.6rem; flex-wrap:wrap;}}
+.cc-scale, .cc-estimates {{font-size:.83rem; color:{MUTED};}}
+.cc-estimates b {{display:block; color:{INK}; font-size:1.1rem;}}
+.cc-track {{position:relative; height:.65rem; margin-top:.35rem; border-radius:1rem; background:#E4E8EE;}}
+.cc-track i {{position:absolute; inset-block:0; opacity:.48; border-radius:1rem;}}
+.cc-track b {{position:absolute; top:-.25rem; bottom:-.25rem; width:3px; background:{NAVY}; transform:translateX(-50%);}}
+.cc-counts {{justify-content:flex-start; gap:1rem;}}
+.cc-cutoff {{border-top:2px solid {TEAL}; padding-top:.3rem; color:{TEAL}; font-weight:700;}}
+.cc-queue-row {{display:grid; grid-template-columns:auto minmax(0,2fr) auto auto minmax(0,1.4fr); gap:.75rem;
+ align-items:center; border:1px solid {LINE}; border-radius:12px; background:white; padding:.8rem 1rem; color:{INK}; overflow-wrap:anywhere;}}
+.cc-queue-row .cc-badge {{justify-self:start; white-space:nowrap;}}
+.cc-queue-fix {{font-size:.9rem;}}
 [data-tip] {{position: relative; cursor: help; border-bottom: 1px dotted {MUTED};}}
 [data-tip]:hover::after {{content: attr(data-tip); position: absolute; left: 0; bottom: 130%; background: {NAVY}; color: #fff; padding: .5rem .7rem; border-radius: 8px;
    font-size: .78rem; font-weight: 400; line-height: 1.4; width: 240px; z-index: 50; box-shadow: 0 8px 24px rgba(11,31,51,.25); white-space: normal; text-transform: none; letter-spacing: 0;}}
@@ -74,6 +86,9 @@ div[data-testid="stVerticalBlockBorderWrapper"] {{border-radius: 16px !important
 .stButton > button[kind="primary"]:hover {{background: #5ADBB4; transform: translateY(-1px);}}
 .cc-jump {{display: none;}}
 @media (max-width: 760px) {{
+  .cc-queue-row {{grid-template-columns:auto minmax(0,1fr) auto; gap:.45rem;}}
+  .cc-queue-row > :nth-child(4) {{grid-column:2;}}
+  .cc-queue-fix {{grid-column:2 / -1;}}
   .cc-jump {{display: block; text-align: center; background: {TEAL}; color: #fff !important; font-weight: 700; border-radius: 10px; padding: .7rem; margin: .2rem 0 .8rem 0; text-decoration: none;}}
   .cc-hero {{padding: 1.6rem 1.2rem;}} .cc-hero h1 {{font-size: 1.6rem;}} .cc-kpis, .cc-pipe {{grid-template-columns: 1fr;}}
   .cc-pipe .box:not(:last-child)::after {{content: '';}} .cc-tag {{display: none;}} [data-tip]:hover::after {{width: 180px;}}
@@ -83,7 +98,7 @@ div[data-testid="stVerticalBlockBorderWrapper"] {{border-radius: 16px !important
 
 def tip(text, explanation):
     """A word or number with a plain-language explanation on hover."""
-    return f"<span data-tip=\"{explanation}\">{text}</span>"
+    return f"<span data-tip=\"{escape(explanation, quote=True)}\">{text}</span>"
 
 def header():
     return (f"<div class='cc-top'>{LOGO.format(s=34)}<span class='cc-brand'>Crowdfund Compass</span>"
@@ -96,30 +111,20 @@ def badge(verdict):
 def band(score):
     return (RED, "weak") if score <= 25 else (AMBER, "to improve") if score <= 60 else (GREEN, "strong")
 
-def gauge(low, mid, high, colour):
-    """Half-circle gauge: grey track, shaded range (low to high), a marker and the big number at 'most likely'. Values in percent."""
-    r, cx, cy = 90, 110, 110
-    def pt(v, rad=r):
-        a = math.pi * (1 - v / 100)
-        return cx + rad * math.cos(a), cy - rad * math.sin(a)
-    def arc(a, b):
-        (x0, y0), (x1, y1) = pt(a), pt(b)
-        return f"M {x0:.1f} {y0:.1f} A {r} {r} 0 0 1 {x1:.1f} {y1:.1f}"
-    mx, my = pt(mid); length = math.pi * r * (high - low) / 100
-    ticks = "".join(f"<text x='{pt(v, 108)[0]:.0f}' y='{pt(v, 108)[1] + 4:.0f}' font-size='9' fill='{MUTED}' text-anchor='middle'>{v}</text>" for v in (0, 50, 100))
-    return f"""<div class='cc-fade' style='text-align:center'>
-<svg viewBox='-14 0 248 132' style='width:100%;max-width:360px' role='img' aria-label='Chance of reaching the goal: most likely about {mid:.0f} percent, between {low:.0f} and {high:.0f} percent'>
-<path d='{arc(0, 100)}' fill='none' stroke='#E9EDF2' stroke-width='14' stroke-linecap='round'/>
-<path style='stroke-dasharray:{length:.1f};stroke-dashoffset:{length:.1f};animation:ccdraw 1s .15s cubic-bezier(.2,.8,.2,1) forwards' d='{arc(low, high)}' fill='none' stroke='{colour}' stroke-opacity='.38' stroke-width='14' stroke-linecap='round'/>
-<circle style='opacity:0;animation:ccpop .4s .9s ease forwards' cx='{mx:.1f}' cy='{my:.1f}' r='8' fill='{colour}' stroke='#fff' stroke-width='3'/>{ticks}
-<text x='110' y='88' text-anchor='middle' font-size='34' font-weight='800' fill='{INK}'>{mid:.0f}%</text>
-<text x='110' y='106' text-anchor='middle' font-size='10.5' fill='{MUTED}'>most likely</text></svg>
-<div style='font-weight:600;color:{INK};margin-top:-.2rem'>between {low:.0f}% and {high:.0f}%</div></div>"""
+def range_bar(low, mid, high, colour):
+    """Place each estimate on the same 0–100 percent scale."""
+    return (f"<div class='cc-range' role='img' aria-label='Chance of reaching the goal: lower value {low:.0f}%, "
+            f"middle estimate {mid:.0f}%, upper value {high:.0f}%'>"
+            f"<div class='cc-scale'><span>0%</span><span>100%</span></div>"
+            f"<div class='cc-track'><i style='left:{low}%;right:{100-high}%;background:{colour}'></i>"
+            f"<b style='left:{mid}%'></b></div></div>"
+            f"<div class='cc-estimates'><span>Lower value <b>{low:.0f}%</b></span>"
+            f"<span>Middle estimate <b>{mid:.0f}%</b></span><span>Upper value <b>{high:.0f}%</b></span></div>")
 
 def bar(title, sub, score, note=""):
     c, word = band(score)
     note = f"<div class='cc-note' style='margin-top:.15rem'>{note}</div>" if note else ""
-    return (f"<div style='margin-bottom:.85rem'><div style='display:flex;justify-content:space-between;align-items:baseline'>"
+    return (f"<div style='margin-bottom:.55rem'><div style='display:flex;justify-content:space-between;align-items:baseline'>"
             f"<span><b>{title}</b> <span class='cc-note'>· {sub}</span></span>"
             f"<span style='color:{c};font-weight:700;font-size:.9rem'>{word} · {score:.0f}</span></div>"
             f"<div class='cc-bar'><div class='cc-fill' style='width:{max(score, 3):.0f}%;background:{c}'></div></div>{note}</div>")

@@ -4,6 +4,7 @@
 #### This file and ui.py only decide how results are SHOWN. All numbers come from the model files in models/.
 #########################################################
 
+from html import escape
 import datetime as dt
 import os
 import numpy as np
@@ -69,8 +70,12 @@ DEFAULT = {"parent": "Games", "cat_name": "Tabletop Games", "country": "CH",
            "blurb": "Plan your route, share your supplies and reach the summit together before the weather turns.",
            "goal_usd": 15000.0, "min_budget_usd": 9000.0, "duration_days": 30, "launch_date": dt.date.today() + dt.timedelta(days=30),
            "prep_days": 30, "has_video": 1, "prelaunch": 0, "prior_n": 0, "prior_funded": 0, "days_since_last": 180}
-TIP_CHANCE = ("The range is wide because our data shows only about 4 in 10 failed campaigns. Upper value: campaigns like yours in our data. "
-              "Lower value: adjusted to Kickstarter's official rates. 'Most likely' is the middle.")
+RANGE_LABELS = ("Lower value: adjusted to Kickstarter's official rates. Upper value: estimate from our data. "
+                "Middle estimate: halfway between the two; checked against one public figure only.")
+TIP_CHANCE = "The range is wide because our data shows only about 4 in 10 failed campaigns. " + RANGE_LABELS
+COACH_TEST = ("In a test on 2025 campaigns, re-weighted to Kickstarter's official mix, a coach who sees the riskiest "
+              "30% reached about half of all failures, and about 95% of the flagged campaigns failed. A new cohort may differ.")
+FOUNDER_CONTROL = "Less than half of the model's explanation comes from things a founder can change"
 
 
 #### Helpers (logic unchanged from version 1)
@@ -181,14 +186,26 @@ def current_campaign():
 #########################################################
 
 PAGES = ["Home", "Check-up", "Goal optimizer", "Coach view", "Similar campaigns", "Benchmarks", "How it works"]
-if st.session_state.get("nav") not in PAGES:                       # first visit: Home, or the page named in the link (?page=Check-up)
-    st.session_state["nav"] = st.query_params.get("page") if st.query_params.get("page") in PAGES else "Home"
-st.markdown(ui.header(), unsafe_allow_html=True)
-st.segmented_control("Page", PAGES, key="nav", label_visibility="collapsed")
-page = st.session_state.get("nav") or "Home"
+page = st.query_params.get("page", "Home")
+if page not in PAGES:
+    page = "Home"
 
 def go(target):
-    st.session_state["nav"] = target
+    st.query_params["page"] = target
+
+st.markdown(ui.header(), unsafe_allow_html=True)
+if page == "Home":
+    coach, founder = st.columns(2)
+    coach.button("Open Coach view", type="primary", on_click=go, args=("Coach view",), width="stretch")
+    founder.button("Check a campaign", on_click=go, args=("Check-up",), width="stretch")
+else:
+    for col, target in zip(st.columns(3), ("Home", "Coach view", "Check-up")):
+        col.button(target, on_click=go, args=(target,), disabled=page == target, width="stretch")
+
+secondary = ("Goal optimizer", "Similar campaigns", "Benchmarks", "How it works")
+with st.container(horizontal=True):
+    for target in secondary:
+        st.button(target, type="tertiary", on_click=go, args=(target,), disabled=page == target)
 
 
 #### Home
@@ -201,12 +218,9 @@ if page == "Home":
 <p>On Kickstarter a campaign that misses its goal gets nothing. Crowdfund Compass compares a plan with past campaigns before it goes live and says: Launch, Adjust or Coach first.</p>
 <div class='cc-kpis'>
 <div class='cc-kpi'><div class='n'>~{T['n_train'] / 1000:.0f},000</div><div class='t'>recent campaigns the model learned from (from 489,000 collected)</div></div>
-<div class='cc-kpi'><div class='n'>about half</div><div class='t'>of all failures are reached by a coach who can see 30% of a cohort; 95% of the flagged campaigns really fail</div></div>
+<div class='cc-kpi'><div class='n'>about half</div><div class='t'>of all failures reached at 30% coach capacity in a re-weighted test on 2025 campaigns. About 95% of flagged campaigns failed. A new cohort may differ.</div></div>
 <div class='cc-kpi'><div class='n'>2025–2026</div><div class='t'>tested on 39,500 campaigns launched after the ones it learned from</div></div>
 </div></div>""", unsafe_allow_html=True)
-    a, b, _ = st.columns([1.2, 1.2, 3])
-    a.button("Check your campaign  →", type="primary", on_click=go, args=("Check-up",), use_container_width=True)
-    b.button("Triage a cohort", on_click=go, args=("Coach view",), use_container_width=True)
     cols = st.columns(3)
     for col, (h, t) in zip(cols, [("One verdict per plan", "Launch, Adjust or Coach first, with the one change that is linked to the biggest gain."),
                                   ("Honest about uncertainty", "Chances are shown as a range. Kickstarter hides most failed campaigns, so no tool can know the exact level."),
@@ -232,13 +246,13 @@ if page == "Check-up":
     with right:
         st.markdown(f"<div id='result' style='scroll-margin-top:1rem'></div><div class='cc-card cc-fade'><div style='display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:.5rem'>"
                     f"<span class='cc-eyebrow'>{ui.tip('Chance of reaching the goal', TIP_CHANCE)}</span>{ui.badge(r['verdict'])}</div>"
-                    f"{ui.gauge(r['low'] * 100, r['mid'] * 100, r['high'] * 100, colour)}"
+                    f"{ui.range_bar(r['low'] * 100, r['mid'] * 100, r['high'] * 100, colour)}"
                     f"<p style='text-align:center;margin:.5rem 0 0 0'>{explain}</p></div>", unsafe_allow_html=True)
         if r["fixes"]:
             f = r["fixes"][0]
             st.markdown(f"<div class='cc-next cc-fade'><span class='cc-eyebrow'>Best next step</span><div class='big'>{f['change']}</div>"
                         f"<div class='sub'>Campaigns that did this were funded more often: about +{f['gain']:.0f} points "
-                        f"(most likely {r['mid'] * 100:.0f}% → {middle(f['low'] / 100, f['high'] / 100) * 100:.0f}%).</div></div>", unsafe_allow_html=True)
+                        f"(middle estimate {r['mid'] * 100:.0f}% → {middle(f['low'] / 100, f['high'] / 100) * 100:.0f}%).</div></div>", unsafe_allow_html=True)
         else:
             st.markdown("<div class='cc-card cc-fade'><span class='cc-eyebrow'>Best next step</span><div class='cc-h'>No single change stands out</div>"
                         "<span class='cc-note'>Changing the goal, length, launch day, video, pre-launch page, preparation time, title or blurb is not linked to 2 more points.</span></div>",
@@ -254,8 +268,9 @@ if page == "Check-up":
         tip_levers = "Each bar compares one part of your plan with recent campaigns. 50 = typical. Green = strong, amber = to improve, red = weak."
         st.markdown(f"<div class='cc-card cc-fade'><span class='cc-eyebrow'>{ui.tip('What you can change', tip_levers)}</span>"
                     f"<div style='margin-top:.7rem'>{bars}</div></div>", unsafe_allow_html=True)
+        st.caption(f"{TIP_CHANCE} {FOUNDER_CONTROL}.")
         if len(r["fixes"]) > 1:
-            cards = "".join(f"<div class='cc-mini'><b>{f['change']}</b><br><span class='cc-note'>most likely</span> "
+            cards = "".join(f"<div class='cc-mini'><b>{f['change']}</b><br><span class='cc-note'>middle estimate</span> "
                             f"<span class='cc-arrow'>{r['mid'] * 100:.0f}% → {middle(f['low'] / 100, f['high'] / 100) * 100:.0f}%</span></div>" for f in r["fixes"][1:])
             st.markdown(f"<span class='cc-eyebrow'>Other changes</span><div class='cc-grid' style='margin:.5rem 0 .9rem 0'>{cards}</div>", unsafe_allow_html=True)
         if any(f["lever"] in ("Pre-launch page", "Preparation") for f in r["fixes"]):
@@ -298,7 +313,7 @@ if page == "Goal optimizer":
     here = curve.iloc[(curve.goal - c["goal_usd"]).abs().argmin()]
     rec = None if len(ok) == 0 else (here if ok.goal.max() >= c["goal_usd"] else ok.iloc[-1])
     x = alt.X("goal:Q", scale=alt.Scale(type="log", nice=False, domain=[float(goals.min()), float(goals.max())]), axis=alt.Axis(format="$~s", title="Funding goal (USD, log scale)"))
-    tips = [alt.Tooltip("goal:Q", title="Goal", format="$,.0f"), alt.Tooltip("mid:Q", title="Most likely (%)", format=".0f"),
+    tips = [alt.Tooltip("goal:Q", title="Goal", format="$,.0f"), alt.Tooltip("mid:Q", title="Middle estimate (%)", format=".0f"),
             alt.Tooltip("low:Q", title="Lower value (%)", format=".0f"), alt.Tooltip("high:Q", title="Upper value (%)", format=".0f")]
     base = alt.Chart(curve).encode(x=x)
     layers = [base.mark_area(color=ui.TEAL, opacity=0.16).encode(y=alt.Y("low:Q", title="Chance of reaching the goal (%)", scale=alt.Scale(domain=[0, 100])), y2="high:Q"),
@@ -315,8 +330,8 @@ if page == "Goal optimizer":
     with left:
         st.markdown("<div class='cc-h'>How the chance changes with the goal</div>", unsafe_allow_html=True)
         st.altair_chart(alt.layer(*layers).properties(height=380), width='stretch')
-        st.markdown("<span class='cc-note'>Line = most likely chance. Shaded band = range (our data at the top, adjusted to Kickstarter's official rates at the bottom). "
-                    "Green dot = recommended goal. Pattern in past campaigns, not a cause.</span>", unsafe_allow_html=True)
+        st.markdown("<span class='cc-note'>Line = middle estimate. Shaded band = range. "
+                    f"{RANGE_LABELS} Green dot = recommended goal. Pattern in past campaigns, not a cause.</span>", unsafe_allow_html=True)
     with right:
         if rec is None:
             st.markdown(f"<div class='cc-card'><span class='cc-eyebrow'>Recommended goal</span><div class='cc-h' style='color:{ui.RED}'>None covers your budget</div>"
@@ -329,7 +344,7 @@ if page == "Goal optimizer":
                    if keep and c["min_budget_usd"] < c["goal_usd"] * 0.98 else "")
             st.markdown(f"<div class='cc-next'><span class='cc-eyebrow'>Recommended goal</span><div class='big' style='font-size:1.7rem'>${(c['goal_usd'] if keep else rec.goal):,.0f}</div>"
                         f"<div class='sub'>{'Keep your goal: it is outside the riskiest group.' if keep else 'The highest goal that covers your minimum budget and stays out of the riskiest group.'} "
-                        f"Most likely {rec.mid:.0f}% (between {rec.low:.0f}% and {rec.high:.0f}%).{why}</div></div>", unsafe_allow_html=True)
+                        f"Middle estimate {rec.mid:.0f}% (between {rec.low:.0f}% and {rec.high:.0f}%).{why}</div></div>", unsafe_allow_html=True)
         rows = ""
         for label, g in [("Minimum budget", c["min_budget_usd"]), ("Your goal", c["goal_usd"]), ("Your goal + 50%", c["goal_usd"] * 1.5)]:
             row = curve.iloc[(curve.goal - g).abs().argmin()]
@@ -370,7 +385,7 @@ def score_cohort(df):
                  "prelaunch": int(x.prelaunch_page), "prior_n": int(x.earlier_campaigns), "prior_funded": int(min(x.earlier_funded, x.earlier_campaigns)),
                  "days_since_last": float(x.days_since_last)}
             r = check(c)
-            rows.append({"Campaign": c["name"], "Most likely chance (%)": round(r["mid"] * 100), "Chance (low)": round(r["low"] * 100),
+            rows.append({"Campaign": c["name"], "Middle estimate (%)": round(r["mid"] * 100), "Chance (low)": round(r["low"] * 100),
                          "Chance (high)": round(r["high"] * 100), "Weakest area": min(LEVERS, key=lambda a: r["areas"][a]),
                          "Top fix": r["fixes"][0]["change"] if r["fixes"] else "No single change stands out",
                          "Gain (points)": round(r["fixes"][0]["gain"]) if r["fixes"] else 0,
@@ -403,20 +418,31 @@ if page == "Coach view":
         n_coach = int(round(len(out) * capacity))                                   # the coach's capacity decides who is 'Coach first'
         out["Verdict"] = np.where(out.index < n_coach, "Coach first", np.where(out["Gain (points)"] >= META["verdict"]["adjust_gain"], "Adjust", "Launch"))
         out.insert(0, "Risk rank", out.index + 1); out = out.drop(columns="_low")
-        cols = st.columns(3, gap="medium")
-        for col, v in zip(cols, ["Coach first", "Adjust", "Launch"]):
-            g = out[out.Verdict == v]; colr = ui.VERDICT[v]
-            cards = "".join(f"<div class='cc-mini' style='border-left:4px solid {colr};margin-bottom:.6rem'><b>{r.Campaign}</b><br>"
-                            f"<span class='cc-note'>most likely {r['Most likely chance (%)']}% · {r['Top fix']}</span></div>" for _, r in g.iterrows())
-            col.markdown(f"<div class='cc-col cc-fade'><h4>{ui.badge(v)} &nbsp;<span class='cc-note'>{len(g)} campaign{'s' if len(g) != 1 else ''}</span></h4>"
-                         f"{cards or '<span class=cc-note>None</span>'}</div>", unsafe_allow_html=True)
+        counts = out["Verdict"].value_counts()
+        summary = " ".join(f"<span>{ui.badge(v)} {counts.get(v, 0)}</span>" for v in ("Coach first", "Adjust", "Launch"))
+        st.markdown(f"<div class='cc-counts'>{summary}</div>", unsafe_allow_html=True)
+        st.caption(RANGE_LABELS)
+        cutoff = f"<div class='cc-cutoff'>Coach capacity: {n_coach} teams</div>"
+        if n_coach == 0:
+            st.markdown(cutoff, unsafe_allow_html=True)
+        for _, row in out.iterrows():
+            rank = row["Risk rank"]
+            st.markdown(
+                f"<div class='cc-queue-row'><b>#{rank}</b><strong>{escape(row['Campaign'])}</strong>"
+                f"{ui.badge(row['Verdict'])}<span>{row['Chance (low)']}–{row['Chance (high)']}%</span>"
+                f"<span class='cc-queue-fix'>{escape(row['Top fix'])}</span></div>",
+                unsafe_allow_html=True,
+            )
+            with st.expander(f"#{rank} · Full details"):
+                st.table(row.to_frame(name="Campaign").rename_axis(" ").astype(str))
+            if rank == n_coach:
+                st.markdown(cutoff, unsafe_allow_html=True)
         with st.expander("Full table and download", expanded=False):
             tint = {v: ui.SOFT[c] for v, c in ui.VERDICT.items()}
             st.dataframe(out.style.apply(lambda row: [f"background-color: {tint[row.Verdict]}" if col == "Verdict" else "" for col in out.columns], axis=1),
                          hide_index=True, width='stretch')
             st.download_button("Download the result as CSV", out.to_csv(index=False).encode("utf-8"), file_name="cohort_result.csv")
-        st.markdown("<span class='cc-note'>In a realistic cohort, a coach who can see 30% reaches about half of all campaigns that later fail, "
-                    "and 95% of the campaigns in that group really fail. Patterns, not causes.</span>", unsafe_allow_html=True)
+        st.caption(COACH_TEST)
 
 
 #### Similar campaigns (nearest neighbours)
@@ -526,9 +552,9 @@ if page == "How it works":
                     "Real Kickstarter rates are lower than in our data, which is why the app shows a range.</span>", unsafe_allow_html=True)
     st.markdown("<div class='cc-h' style='margin-top:.6rem'>Limits you should know</div>", unsafe_allow_html=True)
     limits = [("Our data misses many failed campaigns", "We hold about 85% of all funded campaigns but about 42% of the failed ones, because Kickstarter's listings hide most campaigns that failed. That is why chances are a range."),
-              ("Ranking beats level", "The model is good at telling stronger plans from weaker ones. The exact percentage is rough. 'Most likely' was checked on one public figure: 80% official for tabletop games in 2024, 78% here."),
+              ("Ranking beats level", "The model is good at telling stronger plans from weaker ones. The exact percentage is rough. 'Middle estimate' was checked on one public figure: 80% official for tabletop games in 2024, 78% here."),
               ("Patterns, not causes", "'Campaigns with a pre-launch page were funded more often' does not mean a page causes funding."),
-              ("Most of it is not in the founder's hands", "What is being made and the creator's track record explain 57% of the result; goal, timing, presentation and pitch explain 43%."),
+              (FOUNDER_CONTROL, "In the model's explanation, what is being made and the creator's track record explain 57% of the result; goal, timing, presentation and pitch explain 43%."),
               ("A market test, not a verdict on the company", "Funding shows that backers want the product now. It does not prove the company will survive."),
               ("Data up to November 2026", "Kickstarter changes. The model should be retrained with new listings.")]
     st.markdown("<div class='cc-grid'>" + "".join(f"<div class='cc-mini'><b>{h}</b><br><span class='cc-note'>{t}</span></div>" for h, t in limits) + "</div><div style='height:.9rem'></div>", unsafe_allow_html=True)

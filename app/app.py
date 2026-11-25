@@ -361,7 +361,7 @@ if page == "Goal optimizer":
 COHORT_COLUMNS = ["title", "blurb", "main_category", "category", "country", "goal_usd", "min_budget_usd", "duration_days", "launch_date",
                   "prep_days", "has_video", "prelaunch_page", "earlier_campaigns", "earlier_funded", "days_since_last"]
 EXAMPLE_COHORT = pd.DataFrame([
-    ["Alpine Trails: A Cooperative Hiking Board Game", "Plan your route, share supplies and reach the summit together.", "Games", "Tabletop Games", "Switzerland", 15000, 9000, 30, "2027-02-02", 30, 1, 0, 0, 0, 0],
+    ["Alpine Trails: A Cooperative Hiking Board Game for 1–4 Players", "Plan your route, share your supplies and reach the summit together before the weather turns.", "Games", "Tabletop Games", "Switzerland", 15000, 9000, 30, "2027-01-15", 30, 1, 0, 0, 0, 180],   # same as the check-up example
     ["BudgetBuddy: the AI app that manages your money", "A mobile application platform empowering students to track spending.", "Technology", "Apps", "Switzerland", 60000, 40000, 45, "2027-02-10", 3, 0, 0, 0, 0, 0],
     ["Night Harbor #4: A 32-Page Noir Fantasy Comic", "Issue 4 of the indie graphic novel series. Variant covers and enamel pins.", "Comics", "Comic Books", "Germany", 3000, 2000, 21, "2027-02-16", 60, 1, 1, 4, 4, 200],
     ["Zürich Rooftop Honey", "Small batch honey from city bees, delivered to your door.", "Food", "Small Batch", "Switzerland", 8000, 5000, 30, "2027-03-01", 10, 1, 0, 0, 0, 0],

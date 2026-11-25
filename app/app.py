@@ -224,7 +224,7 @@ with st.container(horizontal=True):
 if page == "Home":
     T = META["test"]
     st.markdown(f"""<div class='cc-hero cc-fade'><span class='cc-eyebrow' style='color:#7FE3C4'>Pre-launch readiness check for Kickstarter</span>
-<h1>See which campaigns are ready to launch, and which need a coach first.</h1>
+<h1>See which campaigns need a coach first, and what each one could change before launch.</h1>
 <p>On Kickstarter a campaign that misses its goal gets nothing. Crowdfund Compass compares a plan with past campaigns before it goes live and says: Launch, Adjust or Coach first.</p>
 <div class='cc-kpis'>
 <div class='cc-kpi'><div class='n'>~{T['n_train'] / 1000:.0f},000</div><div class='t'>recent campaigns the model learned from (from 489,000 collected)</div></div>
@@ -251,7 +251,7 @@ if page == "Check-up":
         st.markdown("<a class='cc-jump' href='#result'>See my result ↓</a>", unsafe_allow_html=True)
     r = check(c)
     colour = ui.VERDICT[r["verdict"]]
-    explain = {"Launch": "Ready as planned. No single change stands out.", "Adjust": "Worth changing one thing before launch.",
+    explain = {"Launch": "Not among the riskiest plans, and no single change adds 5 points. This is not a promise: the range shows the risk that remains.", "Adjust": "Worth changing one thing before launch.",
                "Coach first": "Among the riskiest plans. Talk it through with a coach before launching."}[r["verdict"]]
     with right:
         st.markdown(f"<div id='result' style='scroll-margin-top:1rem'></div><div class='cc-card cc-fade'><div style='display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:.5rem'>"
@@ -414,7 +414,7 @@ def score_cohort(df, code_version=CODE_VERSION):
             rows.append({"Campaign": c["name"], "Middle estimate (%)": round(r["mid"] * 100), "Chance (low)": round(r["low"] * 100),
                          "Chance (high)": round(r["high"] * 100), "Weakest area": min(LEVERS, key=lambda a: r["areas"][a]),
                          "Top fix": r["fixes"][0]["change"] if r["fixes"] else "No single change stands out",
-                         "Gain (points)": round(r["fixes"][0]["gain"]) if r["fixes"] else 0, "Assessment": r["verdict"],
+                         "Gain (points)": round(r["fixes"][0]["mid"]) - round(r["fixes"][0]["mid_before"]) if r["fixes"] else 0,  "Assessment": r["verdict"],   # gain rounded as on the check-up card
                          "Product type rarely funded": "yes" if r["areas"]["Market"] <= 15 else "", "_low": r["low"]})
         except Exception as e:
             problems.append(f"Row {i + 1} ({str(x.title)[:40]}): could not be scored ({type(e).__name__})")
@@ -429,7 +429,7 @@ if page == "Coach view":
     a, b = st.columns([3, 2], gap="large")
     uploaded = a.file_uploader("Cohort file (CSV)", type="csv")
     capacity = b.slider("Share of the cohort you can coach (%)", 10, 60, int(META["verdict"]["default_capacity"] * 100), step=5,
-                        help="Sets how many campaigns are marked 'Coach first'.") / 100
+                        help="Sets how many of the riskiest teams get a coaching slot (above the line). It never changes a verdict.") / 100
     b.download_button("Download the CSV template", EXAMPLE_COHORT.to_csv(index=False).encode("utf-8"), file_name="cohort_template.csv")
     data = pd.read_csv(uploaded) if uploaded is not None else EXAMPLE_COHORT
     if uploaded is None:
@@ -569,7 +569,7 @@ if page == "How it works":
                     f"January–June 2026: {T['auc_within_category_2026h1']:.2f}. Accuracy {T['accuracy_2025'] * 100:.0f}% against 71% for always saying \"funded\".</span></div>", unsafe_allow_html=True)
         st.markdown(f"<div class='cc-card'><span class='cc-eyebrow'>The verdict rule</span><p style='margin:.5rem 0'>{ui.badge('Coach first')} lower value below {META['verdict']['reference_cut'] * 100:.1f}%: "
                     f"among the riskiest plans</p><p style='margin:.5rem 0'>{ui.badge('Adjust')} one change is linked to at least "
-                    f"{META['verdict']['adjust_gain']:.0f} more points</p><p style='margin:.5rem 0'>{ui.badge('Launch')} everything else</p><span class='cc-note'>In Coach view, coaching slots go to the riskiest teams by rank, up to the coach's capacity "
+                    f"{META['verdict']['adjust_gain']:.0f} more points</p><p style='margin:.5rem 0'>{ui.badge('Launch')} not among the riskiest, and no single change adds 5 points. Not a promise: the plan can still be risky, so read the range.</p><span class='cc-note'>In Coach view, coaching slots go to the riskiest teams by rank, up to the coach's capacity "
                     f"(default {META['verdict']['default_capacity'] * 100:.0f}%, adjustable). The slots do not change any verdict.</span></div>", unsafe_allow_html=True)
     with b:
         cal = pd.concat([pd.DataFrame(META["calibration"]["before"], columns=["x", "y"]).assign(s="before correction"),

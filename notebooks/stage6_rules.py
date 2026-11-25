@@ -25,6 +25,7 @@ rules={'Random (expected)':None,
  "Lowest official main-category rate first":TE.parent_category.map(M.OFFICIAL_RATE),
  'Lowest 2023-24 main-category rate in our data first':TE.parent_category.map(par_rate),
  'Lowest 2023-24 subcategory rate in our data first':TE.cat_id.map(cat_rate).fillna(TE.parent_category.map(par_rate)),
+ 'Lowest 2023-24 subcategory rate, outcomes resolved before 1 Jan 2025':TE.cat_id.map(P[pd.to_datetime(P.deadline,unit='s')<pd.Timestamp('2025-01-01')].groupby('cat_id').success.mean()).fillna(TE.parent_category.map(par_rate)),
  'Goal relative to the category (highest goal ratio first)':-TE.goal_ratio,
  'Model, ranked by the lower value':TE.low}
 rows=[]

@@ -35,11 +35,17 @@ prev=(w*fail).sum()/w.sum()
 rows=[('Random (expected)',.3,prev)]+[(k,*reach(v,w,fail)) for k,v in rules.items()]+[('Maximum possible',min(1,.3/prev),1.)]
 R=pd.DataFrame(rows,columns=['rule','failures reached','selected that failed']).round(3)
 print('2026 H1 launches: n',len(TE),'| failures',int(fail.sum()),'| re-weighted share failing',round(prev,3)); print(R.to_string(index=False))
-# paired bootstrap: model minus the best simple rule (2023-25 subcategory rate), resampling campaigns
-rng=np.random.default_rng(7); diffs=[]; best=rules['Lowest subcategory rate first (2023-25, all data known before 2026)']; mod=TE.low.values
-for b in range(500):
-    i=rng.integers(0,len(TE),len(TE)); diffs.append(reach(mod[i],w[i],fail[i])[0]-reach(best[i],w[i],fail[i])[0])
-d=np.array(diffs); print('model minus best simple rule, failures reached: %.3f  (95%% bootstrap interval %.3f to %.3f)'%(np.mean(d),*np.percentile(d,[2.5,97.5])))
+# paired bootstrap against each subcategory rule; point estimate = difference on the full sample (not the bootstrap mean)
+P25c=P25[pd.to_datetime(P25.deadline, unit='s' if str(P25.deadline.dtype).startswith(('int','float')) else None) < pd.Timestamp('2026-01-01')]
+rng=np.random.default_rng(7); mod=TE.low.values
+cmp={'2023-24 rule (strongest)':sub24.values,'2023-25 rule':sub25.values}
+if P25c is not None:
+    cmp['2023-25 rule, outcomes resolved before 1 Jan 2026']=TE.cat_id.map(P25c.groupby('cat_id').success.mean()).fillna(TE.parent_category.map(P25c.groupby('parent_category').success.mean())).values
+idx=[rng.integers(0,len(TE),len(TE)) for _ in range(500)]
+for name,rule in cmp.items():
+    point=reach(mod,w,fail)[0]-reach(rule,w,fail)[0]
+    d=np.array([reach(mod[i],w[i],fail[i])[0]-reach(rule[i],w[i],fail[i])[0] for i in idx])
+    print('model minus %s: %.3f points of recall (rule reaches %.3f); 95%% paired bootstrap interval %.3f to %.3f'%(name,point,reach(rule,w,fail)[0],*np.percentile(d,[2.5,97.5])))
 # the fixed single check-up cut (11.5%, set on 2025) applied to 2026 H1
 flag=TE.low.values<0.115
 print('single check-up cut 11.5%%: share flagged %.3f (target 0.30) | failures reached %.3f | flagged that failed %.3f'%((w*flag).sum()/w.sum(),(w*fail*flag).sum()/(w*fail).sum(),(w*fail*flag).sum()/(w*flag).sum()))

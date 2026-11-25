@@ -16,6 +16,12 @@ def load_artifacts(folder=None):
            'area_reference': {k: np.array(v) for k, v in meta['area_reference'].items()}, 'verdict': meta['verdict']}
     return art, meta, text
 
+def is_round(goal_usd):
+    """1 for goals like 1,000 / 2,500 / 50,000. Training computes this in the project's own currency; the app only knows the USD amount."""
+    g = np.atleast_1d(np.asarray(goal_usd, float)).clip(min=1)
+    return np.isclose((g / 10 ** np.floor(np.log10(g))) % 0.5, 0).astype(int)
+
+
 def campaign_features(c, meta, text):
     """c: dict with the app inputs. Returns a one-row DataFrame with every model feature plus helper columns."""
     launch = pd.Timestamp(c['launch_date']); goal = float(c['goal_usd']); dur = float(c['duration_days'])
@@ -27,14 +33,17 @@ def campaign_features(c, meta, text):
          # Ambition
          'duration_days': dur, 'log_goal_usd': np.log10(max(goal, 1)), 'log_goal_per_day': np.log10(max(goal / max(dur, 1), .1)),
          'goal_ratio': np.log10(max(goal, 1) / max(med, 1)),
-         'goal_is_round': int(np.isclose((goal / 10 ** np.floor(np.log10(max(goal, 1)))) % 0.5, 0)),
+         'goal_is_round': int(is_round(goal)[0]),
          # Timing
          'launch_month': launch.month, 'launch_weekday': launch.weekday(),
          'holiday_window': int(launch <= pd.Timestamp(launch.year, 12, 25) <= launch + pd.Timedelta(days=dur)),
          'log_prep_days': np.log10(max(float(c['prep_days']), 0) + 1),
          # Founder
+         # as in training: every earlier campaign that ended counts as experience (cancelled and suspended too),
+         # but the funding rate only counts campaigns that ended funded or failed
          'creator_prior_n': float(c['prior_n']), 'creator_prior_funded': float(c['prior_funded']),
-         'creator_prior_rate': (c['prior_funded'] / c['prior_n']) if c['prior_n'] > 0 else np.nan,
+         'creator_prior_rate': (c['prior_funded'] / (c['prior_n'] - c.get('prior_cancelled', 0)))
+                               if c['prior_n'] - c.get('prior_cancelled', 0) > 0 else np.nan,
          'first_timer': int(c['prior_n'] == 0),
          'log_days_since_last': np.log10(float(c['days_since_last']) + 1) if c['prior_n'] > 0 else np.nan,
          # Presentation

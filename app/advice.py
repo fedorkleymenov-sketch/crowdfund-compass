@@ -74,7 +74,8 @@ class Advisor:
             if g < floor - 1e-9: break
             d = np.log10(f)
             v('Goal', f'Lower the goal by {round((1 - f) * 100)}% (to about ${g:,.0f})', goal_usd=g, log_goal_usd=np.log10(max(g, 1)),
-              goal_ratio=r.goal_ratio + d, log_goal_per_day=r.log_goal_per_day + d)
+              goal_ratio=r.goal_ratio + d, log_goal_per_day=r.log_goal_per_day + d,
+              goal_is_round=int(np.isclose((max(g, 1) / 10 ** np.floor(np.log10(max(g, 1)))) % 0.5, 0)))
         for dur in (15, 21, 30, 45):
             if abs(dur - r.duration_days) >= 4:
                 v('Duration', f'Run the campaign for {dur} days instead of {r.duration_days:.0f}', duration_days=dur,

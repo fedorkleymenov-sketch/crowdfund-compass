@@ -77,7 +77,7 @@ DEFAULT = {"parent": "Games", "cat_name": "Tabletop Games", "country": "CH",
            "name": "Alpine Trails: A Cooperative Hiking Board Game for 1–4 Players",
            "blurb": "Plan your route, share your supplies and reach the summit together before the weather turns.",
            "goal_usd": 15000.0, "min_budget_usd": 9000.0, "duration_days": 30, "launch_date": dt.date(2027, 1, 15),     # fixed, so the example gives the same result every day (slide 13)
-           "prep_days": 30, "has_video": 1, "prelaunch": 0, "prior_n": 0, "prior_funded": 0, "days_since_last": 180}
+           "prep_days": 30, "has_video": 1, "prelaunch": 0, "prior_n": 0, "prior_funded": 0, "prior_cancelled": 0, "days_since_last": 180}
 RANGE_LABELS = ("The two ends are two estimates: one from our data, one adjusted to Kickstarter's official funding rate for the category "
                 "(usually the lower one, because our data misses failed campaigns). Middle estimate: halfway between the two; checked against one public figure only.")
 TIP_CHANCE = "The range is wide because our data shows only about 4 in 10 failed campaigns. " + RANGE_LABELS
@@ -167,16 +167,23 @@ def campaign_inputs():
     with st.container(border=True):
         step(4, "Your track record")
         first = st.toggle("This is my first campaign", d["prior_n"] == 0)
-        prior_n = prior_funded = 0; since = d["days_since_last"]
+        prior_n = prior_funded = prior_cancelled = 0; since = d["days_since_last"]
         if not first:
             a, b = st.columns(2)
-            prior_n = a.number_input("Earlier campaigns that ended (funded or not; leave out cancelled ones)", min_value=1, max_value=200, value=max(1, int(d["prior_n"])))
-            prior_funded = b.number_input("Of which funded", min_value=0, max_value=int(prior_n), value=min(int(d["prior_funded"]) if d["prior_n"] else 1, int(prior_n)))
+            prior_n = st.number_input("Earlier campaigns that have ended (all of them, cancelled ones included)", min_value=1, max_value=200, value=max(1, int(d["prior_n"])))
+            a, b = st.columns(2)
+            prior_funded = a.number_input("Of which funded", min_value=0, max_value=int(prior_n), value=min(int(d["prior_funded"]) if d["prior_n"] else 1, int(prior_n)))
+            prior_cancelled = b.number_input("Of which cancelled or suspended", min_value=0, max_value=int(prior_n) - int(prior_funded),
+                                             value=min(int(d.get("prior_cancelled", 0)), int(prior_n) - int(prior_funded)),
+                                             help="They count as experience, but not in your funding rate, as in the model's training data.")
             since = st.number_input("Days since your last campaign ended", min_value=0, max_value=6000, value=int(d["days_since_last"]))
+    if min_budget > goal:
+        st.warning(f"Your minimum budget (${min_budget:,.0f}) is above your goal (${goal:,.0f}): a campaign funded at this goal would not cover it. "
+                   "Raise the goal or check the budget. The check uses the goal as the minimum for now.")
     c = {"parent": parent, "cat_name": cat_name, "cat_id": int(CATS[(CATS.parent == parent) & (CATS.name == cat_name)].cat_id.iloc[0]),
          "country": country, "name": name, "blurb": blurb, "goal_usd": float(goal), "min_budget_usd": float(min(min_budget, goal)),
          "duration_days": duration, "launch_date": launch, "prep_days": prep, "has_video": int(video), "prelaunch": int(prelaunch),
-         "prior_n": int(prior_n), "prior_funded": int(prior_funded), "days_since_last": since}
+         "prior_n": int(prior_n), "prior_funded": int(prior_funded), "prior_cancelled": int(prior_cancelled), "days_since_last": since}
     st.session_state["campaign"] = c
     return dict(c, launch_date=pd.Timestamp(launch))
 
@@ -287,7 +294,7 @@ if page == "Check-up":
             st.markdown("<p class='cc-note'>A pre-launch page and more preparation time stand for groundwork: building an audience before launch. "
                         "Opening a page the day before launch will not add these points.</p>", unsafe_allow_html=True)
         founder = ("<b>First campaign.</b> No track record yet, so preparation matters more." if c["prior_n"] == 0 else
-                   f"<b>Track record:</b> {c['prior_funded']} of {c['prior_n']} earlier campaigns funded "
+                   f"<b>Track record:</b> {c['prior_funded']} of {c['prior_n'] - c.get('prior_cancelled', 0)} earlier campaigns that ended funded or not funded "
                    f"({ui.band(float(r['areas']['Founder']))[1]} compared with other creators).")
         market = float(r["areas"]["Market"])
         product = f"<b>Product type:</b> campaigns for this kind of product have done {'well' if market > 60 else 'about average' if market > 25 else 'poorly'} on Kickstarter."
@@ -314,10 +321,11 @@ if page == "Goal optimizer":
     c = current_campaign()
     X = P.campaign_features(c, META, TEXT)
     goals = np.unique(np.concatenate([np.round(np.geomspace(max(c["goal_usd"] * 0.2, 100), c["goal_usd"] * 3, 48), -1),
-                                      [c["goal_usd"], c["min_budget_usd"], c["goal_usd"] * 1.5]]))      # the three goals in the table are computed exactly
-    goals = goals[goals >= 100]
+                                      [c["goal_usd"], max(c["min_budget_usd"], 100), c["goal_usd"] * 1.5]]))      # the three goals in the table are computed exactly
+    goals = goals[goals >= 100]                                                                                     # $100 is the smallest goal the app scores
     V = pd.concat([X] * len(goals), ignore_index=True); d = np.log10(goals / c["goal_usd"])
     V["goal_usd"] = goals; V["log_goal_usd"] = np.log10(goals); V["goal_ratio"] = X.goal_ratio.iloc[0] + d; V["log_goal_per_day"] = X.log_goal_per_day.iloc[0] + d
+    V["goal_is_round"] = P.is_round(goals)                                                     # recomputed for every goal
     low, high = advisor.chances(V)
     curve = pd.DataFrame({"goal": goals, "low": low * 100, "high": high * 100, "mid": [middle(a, b) * 100 for a, b in zip(low, high)]})
     cut = META["verdict"]["reference_cut"] * 100
@@ -359,9 +367,10 @@ if page == "Goal optimizer":
                         f"Middle estimate {rec.mid:.0f}% (between {rec.low:.0f}% and {rec.high:.0f}%).{why}</div></div>", unsafe_allow_html=True)
         rows = ""
         for label, g in [("Minimum budget", c["min_budget_usd"]), ("Your goal", c["goal_usd"]), ("Your goal + 50%", c["goal_usd"] * 1.5)]:
-            row = curve.iloc[(curve.goal - g).abs().argmin()]
+            row = curve.iloc[(curve.goal - max(g, 100)).abs().argmin()]
+            shown = f"${g:,.0f}" + (" (scored at $100, the smallest goal)" if g < 100 else "")
             rows += (f"<div style='display:flex;justify-content:space-between;padding:.55rem 0;border-bottom:1px solid {ui.LINE}'><span><b>{label}</b><br>"
-                     f"<span class='cc-note'>${g:,.0f}</span></span><span style='text-align:right'><b>{row.mid:.0f}%</b><br><span class='cc-note'>{row.low:.0f}–{row.high:.0f}%</span></span></div>")
+                     f"<span class='cc-note'>{shown}</span></span><span style='text-align:right'><b>{row.mid:.0f}%</b><br><span class='cc-note'>{row.low:.0f}–{row.high:.0f}%</span></span></div>")
         st.markdown(f"<div class='cc-card'><span class='cc-eyebrow'>{ui.tip('Chance at three goals', TIP_CHANCE)}</span>{rows}</div>", unsafe_allow_html=True)
 
 
@@ -377,38 +386,44 @@ EXAMPLE_COHORT = pd.DataFrame([
     ["Zürich Rooftop Honey", "Small batch honey from city bees, delivered to your door.", "Food", "Small Batch", "Switzerland", 8000, 5000, 30, "2027-03-01", 10, 1, 0, 0, 0, 0],
     ["The Lantern Keeper: An Illustrated Children's Book", "A hardcover picture book about a girl who lights the mountain paths.", "Publishing", "Children's Books", "Austria", 6000, 4000, 30, "2027-02-23", 45, 1, 1, 1, 1, 400],
     ["Docu: Voices of the Rhine", "A feature documentary about the people living along the river.", "Film & Video", "Documentary", "Switzerland", 25000, 15000, 40, "2027-03-09", 20, 1, 0, 1, 0, 700],
-], columns=COHORT_COLUMNS)
+], columns=COHORT_COLUMNS).assign(earlier_cancelled=0)
 
 @st.cache_data(show_spinner="Scoring the cohort…")
 def score_cohort(df, code_version=CODE_VERSION):
     """Match the uploaded columns to the expected ones and score every campaign (cached per file)."""
     df = df.rename(columns={col: col.strip().lower().replace(" ", "_") for col in df.columns})
+    if "earlier_cancelled" not in df.columns:
+        df["earlier_cancelled"] = 0                                          # optional column
     missing = [col for col in COHORT_COLUMNS if col not in df.columns]
     if missing:
         return None, {"n": len(df), "scored": 0, "problems": [f"These columns are missing: {', '.join(missing)}. Download the template to see the expected format."], "notes": []}
     rows, problems, notes = [], [], []
     lookup = {(r.parent.lower(), r["name"].lower()): r.cat_id for _, r in CATS.iterrows()}
-    rules = {"goal_usd": (100, 5_000_000), "min_budget_usd": (0, 5_000_000), "duration_days": (1, 60), "prep_days": (0, 1500), "has_video": (0, 1),
-             "prelaunch_page": (0, 1), "earlier_campaigns": (0, 200), "earlier_funded": (0, 200), "days_since_last": (0, 6000)}
+    rules = {"goal_usd": (100, 5_000_000), "min_budget_usd": (0, 5_000_000), "duration_days": (5, 60), "prep_days": (0, 1500), "has_video": (0, 1),
+             "prelaunch_page": (0, 1), "earlier_campaigns": (0, 200), "earlier_funded": (0, 200), "earlier_cancelled": (0, 200), "days_since_last": (0, 6000)}
+    whole = ("has_video", "prelaunch_page", "earlier_campaigns", "earlier_funded", "earlier_cancelled")    # must be whole numbers
     for i, x in df.iterrows():
         bad = []                                         # check every field first, so the coach sees exactly what to fix
         for col, (lo_, hi_) in rules.items():
             v = pd.to_numeric(x[col], errors="coerce")
             if pd.isna(v): bad.append(f"{col} is empty or not a number")
             elif not lo_ <= v <= hi_: bad.append(f"{col} = {x[col]} is outside {lo_}–{hi_:,}")
+            elif col in whole and v != int(v): bad.append(f"{col} = {x[col]} must be a whole number" + (" (0 or 1)" if hi_ == 1 else ""))
+        if pd.isna(x.title) or not str(x.title).strip(): bad.append("title is empty")
         if pd.isna(pd.to_datetime(x.launch_date, errors="coerce")): bad.append("launch_date is not a date (use YYYY-MM-DD)")
         if COUNTRY_CODES.get(str(x.country).strip().lower(), str(x.country).strip().upper()) not in COUNTRY_NAMES: bad.append(f"country '{x.country}' is not one of the 25 countries in our data")
         if (str(x.main_category).strip().lower(), str(x.category).strip().lower()) not in lookup: bad.append(f"category '{x.main_category} / {x.category}' not found")
         if bad:
             problems.append(f"Row {i + 1} ({str(x.title)[:40]}): " + "; ".join(bad)); continue
         if float(x.min_budget_usd) > float(x.goal_usd): notes.append(f"Row {i + 1}: min_budget_usd is above goal_usd, so the goal was used as the minimum budget")
-        if float(x.earlier_funded) > float(x.earlier_campaigns): notes.append(f"Row {i + 1}: earlier_funded is above earlier_campaigns, so it was set to earlier_campaigns")
+        if float(x.earlier_funded) + float(x.earlier_cancelled) > float(x.earlier_campaigns):
+            problems.append(f"Row {i + 1} ({str(x.title)[:40]}): earlier_funded + earlier_cancelled is above earlier_campaigns"); continue
         try:
             cat_id = lookup[(str(x.main_category).strip().lower(), str(x.category).strip().lower())]
             c = {"cat_id": cat_id, "country": COUNTRY_CODES.get(str(x.country).strip().lower(), str(x.country).strip().upper()), "name": str(x.title),
                  "blurb": "" if pd.isna(x.blurb) else str(x.blurb), "goal_usd": float(x.goal_usd), "min_budget_usd": float(min(x.min_budget_usd, x.goal_usd)),
                  "duration_days": float(x.duration_days), "launch_date": pd.Timestamp(x.launch_date), "prep_days": float(x.prep_days), "has_video": int(x.has_video),
-                 "prelaunch": int(x.prelaunch_page), "prior_n": int(x.earlier_campaigns), "prior_funded": int(min(x.earlier_funded, x.earlier_campaigns)),
+                 "prelaunch": int(x.prelaunch_page), "prior_n": int(x.earlier_campaigns), "prior_funded": int(x.earlier_funded), "prior_cancelled": int(x.earlier_cancelled),
                  "days_since_last": float(x.days_since_last)}
             r = check(c)
             rows.append({"Campaign": c["name"], "Middle estimate (%)": round(r["mid"] * 100), "Chance (low)": round(r["low"] * 100),

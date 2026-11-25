@@ -54,11 +54,11 @@ Data: 24 Web Robots scrapes of public Kickstarter listings (2016-03 to 2026-11),
 |---|---|---|
 | Success (target) | 1 if `state == successful`, else 0 | Finished only |
 | Success rate (in sample) | successful ÷ finished, by launch date | Rule 3 label |
-| Goal (USD) | `goal × static_usd_rate` | Modelled as log10 |
+| Goal (USD) | `goal × static_usd_rate` | Modelled as log10. The round-goal flag is computed in the project's own currency in training, but on the USD amount in the app (the app only asks for USD); it is recomputed for every goal the app tests |
 | Campaign length | (`deadline − launched_at`) ÷ 86,400, days | |
 | Preparation time | (`launched_at − created_at`) ÷ 86,400, days | |
 | Goal ratio | log10 of Goal (USD) ÷ median Goal (USD) of the same `cat_id`, campaigns ended in the 12 months before the first day of the launch month | Main category if fewer than 20 prior campaigns |
-| Creator prior campaigns / prior success rate | Count and success rate of the same `creator_id`'s campaigns ended before launch | Earlier failed campaigns are under-recorded |
+| Creator prior campaigns / prior success rate | Count of the same `creator_id`'s campaigns that ended before launch, cancelled and suspended included; success rate = funded ÷ (funded + failed). The app asks for all ended campaigns, of which funded, of which cancelled or suspended (since 25.11) | Earlier failed campaigns are under-recorded |
 | Text score | Output of a logistic regression on TF-IDF of title + blurb, fitted on training data only | Reflects what is being made (product type), not writing quality. Not a lever |
 | Area score | Share of reference campaigns (launches 2023–24) with a lower SHAP sum in that area, 0–100 | 0–25 weak, 26–60 to improve, 61–100 strong |
 | Official funding rate | Kickstarter's all-time success rate per main category | The only category rate shown as fact |

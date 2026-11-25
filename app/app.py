@@ -15,6 +15,8 @@ import altair as alt
 import preprocess as P
 import advice as A
 import ui
+import importlib
+importlib.reload(ui)        # Streamlit Cloud can keep an old ui.py in memory after an update; this loads the current one
 
 st.set_page_config(page_title="Crowdfund Compass", page_icon=os.path.join(P.HERE, "assets", "favicon.png"), layout="wide",
                    initial_sidebar_state="collapsed")

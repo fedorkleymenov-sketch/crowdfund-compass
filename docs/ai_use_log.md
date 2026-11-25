@@ -9,5 +9,6 @@ Course rule: "Use whatever you want, but cite correctly."
 | 16.11.2026 | Claude (Anthropic), model Fable 5.2 | Redesign of the app (presentation only, no model or number changed); PowerPoint deck with charts; chart check of the deck; first draft of the 15-minute voice-over script and of the pitch script (the team rewrites the texts) |
 | 25.11.2026 | ChatGPT (OpenAI, GPT-6.2 Sol and Astra) | Outside review and grade of the project; three design proposals; first version of the Decision Desk layout and the new wording (app.py, ui.py), tested and corrected by Claude before going live |
 | 25.11.2026 | Claude (Anthropic, model Opus 5.5) | Prompts for the ChatGPT review; testing and merging the Decision Desk version; deck, script and docs updated to the new wording |
-
+| 25.11.2026 | ChatGPT (OpenAI, GPT-6.2 Astra) | Examiner-style review in a fresh chat (grade, criteria, correctness audit, hardest questions, action plan); first computation of the comparison with simple rules |
+| 25.11.2026 | Claude (Anthropic, model Opus 5.5) | Checked the review against the code; fixed verdict vs coaching slots, gain scale and range labels; reproduced the simple-rules comparison; deck restructure, script draft 3, docs and report |
 All numbers were computed with code on the data. Decisions on scope, definitions, metrics and the verdict rule were taken by the team at each checkpoint.

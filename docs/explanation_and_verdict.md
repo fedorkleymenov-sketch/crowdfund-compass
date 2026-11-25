@@ -16,8 +16,8 @@ Definition: add up the SHAP pieces of the area's features; the score is the shar
 
 Check on 2025, funded in sample by band (weak / to improve / strong): Ambition 38% / 75% / 86% · Timing 46% / 77% / 80% · Pitch 65% / 66% / 76% · Founder 41% / 62% / 94% · Presentation 55% / 68% / 82% · Product type 29% / 69% / 92%.
 
-## 3. Chance range and "most likely"
-- **Upper value:** calibrated chance in our sample. **Lower value:** after the shift to Kickstarter's official per-category rates. **Most likely:** the middle of the two on the odds scale.
+## 3. Chance range and "middle estimate"
+- **Upper value:** calibrated chance in our sample. **Lower value:** after the shift to Kickstarter's official per-category rates. **Middle estimate:** halfway between the two on the odds scale (called "most likely" before 25.11).
 - Why the range is wide: our data holds about 85% of all funded campaigns but about 42% of the failed ones, so the true level is uncertain.
 - One public benchmark for the middle: tabletop games launched in 2024, official 80% funded; lower 66%, middle 78%, upper 86%.
 

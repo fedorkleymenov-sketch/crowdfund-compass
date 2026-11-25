@@ -1,7 +1,7 @@
-# Semantic Layer: Crowdfund Compass (Kickstarter) — v1.3, 16.11.2026
+# Semantic Layer: Crowdfund Compass (Kickstarter) — v1.4, 25.11.2026
 
 Says what we mean by our data. Never change a definition silently; if a metric is not defined here, propose it and ask first.
-v1.0–v1.2 approved by Fedor on 16.11. Changes in v1.3: title capitalisation dropped (32 features), goal rule, "most likely" value, verdict rule, neutral first-campaign display.
+v1.0–v1.2 approved by Fedor on 16.11. Changes in v1.3: title capitalisation dropped (32 features), goal rule, "most likely" value, verdict rule, neutral first-campaign display. Change in v1.4 (approved by Fedor on 25.11): "most likely" renamed "middle estimate"; the coach claim is always stated as the result of a re-weighted test on 2025 campaigns.
 Data: 24 Web Robots scrapes of public Kickstarter listings (2016-03 to 2026-11), merged by `merge_v2.py` into one row per project. Official benchmark: Kickstarter stats page, last updated 01.01.2026.
 
 ## 1. Terms: file vs. business
@@ -41,7 +41,7 @@ Data: 24 Web Robots scrapes of public Kickstarter listings (2016-03 to 2026-11),
 7. **Crawls.** Full: about 185,000–211,000 projects. Partial: 2021–2023 scrapes, 2026-10-12, 2026-11-16.
 8. **Headline metric: AUC within category** (inside each `cat_id`, averaged by size), with AUC within main category and overall AUC next to it.
 9. **Results are also reported separately** for the 29 capped categories and the rest.
-10. **Chances are shown as a range with a middle.** Upper value: calibrated probability in our sample. Lower value: the same after shifting the odds, per main category, by official odds ÷ sample odds. "Most likely": the middle of the two on the odds scale.
+10. **Chances are shown as a range with a middle.** Upper value: calibrated probability in our sample. Lower value: the same after shifting the odds, per main category, by official odds ÷ sample odds. "Middle estimate": halfway between the two on the odds scale, checked against one public figure only. Never called "most likely".
 11. **Founder history stays in the model**, but its raw funded percentages are not shown. A first campaign is shown neutrally, without a score.
 12. **Goal rule.** The model may only learn that a higher goal lowers the chance.
 13. **Verdict.** Coach first = riskiest share of the cohort ranked by the lower value (default 30%; single check-up: lower value below 11.5%). Adjust = one change is associated with at least 5 points more. Launch = otherwise.

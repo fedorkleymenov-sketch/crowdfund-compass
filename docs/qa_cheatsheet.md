@@ -30,13 +30,13 @@ Six things, each labelled in the app: the text score fed into the main model, th
 We do not claim that. The app says "campaigns that did this were funded more often". The two biggest patterns, a pre-launch page and more preparation time, stand for groundwork such as building an audience. Opening a page the day before launch will not help.
 
 **10. How accurate is the percentage?**
-The ranking is solid, the level is rough. That is why we show a range, about 15 points wide on average, and a "most likely" value in the middle. On the one public figure we could check, tabletop games in 2024, Kickstarter reports 80% funded and our middle value is 78%.
+The ranking is solid, the level is rough. That is why we show a range, about 15 points wide on average, and a "middle estimate" halfway between the two ends. On the one public figure we could check, tabletop games in 2024, Kickstarter reports 80% funded and our middle estimate is 78%. One check is not proof, so we call it an estimate.
 
 **11. What is the business value?**
-In a cohort with Kickstarter's real mix, 56% of campaigns fail. A coach who can see 30% of the cohort and picks by our ranking reaches 51% of all failures, where the maximum possible is 54%, and 95% of the campaigns the coach sees would indeed have failed. Almost no coaching hours go to campaigns that did not need them.
+We tested this on 2025 campaigns, re-weighted to Kickstarter's official mix, where 56% of campaigns fail. A coach who can see 30% of the cohort and picks by our ranking reached 51% of all failures, where the maximum possible is 54%, and about 95% of the campaigns the coach saw failed. A new cohort may differ: re-weighting fixes the mix of funded and failed campaigns, but the hidden failures may differ from the ones we see. And the test shows who gets flagged, not how much coaching helps.
 
 **12. What can a founder actually change?**
-Less than half. Goal, timing, presentation and pitch explain 43% of the model's result. What is being made and the creator's track record explain 57%. The app says so, and tells the coach when a type of product, such as apps or software, has rarely been funded on Kickstarter at all.
+Less than half of what the model uses. In the model's explanation, goal, timing, presentation and pitch account for 43%. What is being made and the creator's track record explain 57%. The app says so, and tells the coach when a type of product, such as apps or software, has rarely been funded on Kickstarter at all.
 
 **13. Does more data help?**
 More features help a lot, more history does not. 44,000 campaigns from 2023–2024 do as well as 385,000 from all years (0.850 against 0.852). Video and pre-launch page add about 0.009.

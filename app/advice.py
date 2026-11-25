@@ -84,7 +84,7 @@ class Advisor:
             v('Launch day', f'Launch on a {day.day_name()} instead of a {r.launch.day_name()}', launch_weekday=day.weekday(),
               launch_month=day.month, holiday_window=self._holiday(day, r.duration_days))
         if r.holiday_window == 1:
-            day = pd.Timestamp(r.launch.year + (r.launch.month == 12), 1, 8) if r.launch.month in (11, 12) else r.launch + pd.Timedelta(days=35)
+            day = pd.Timestamp(r.launch.year + 1, 1, 8) if r.launch.month in (11, 12) else r.launch + pd.Timedelta(days=35)   # 8 January of the NEXT year
             v('Launch date', 'Move the launch so the campaign does not run over Christmas', launch_month=day.month, launch_weekday=day.weekday(), holiday_window=0)
         if r.has_video == 0: v('Video', 'Add a campaign video', has_video=1)
         if r.prelaunch_activated == 0: v('Pre-launch page', 'Open a pre-launch page before launch', prelaunch_activated=1)

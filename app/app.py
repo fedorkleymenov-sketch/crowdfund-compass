@@ -170,7 +170,7 @@ def campaign_inputs():
         prior_n = prior_funded = 0; since = d["days_since_last"]
         if not first:
             a, b = st.columns(2)
-            prior_n = a.number_input("Earlier campaigns (finished)", min_value=1, max_value=200, value=max(1, int(d["prior_n"])))
+            prior_n = a.number_input("Earlier campaigns that ended (funded or not; leave out cancelled ones)", min_value=1, max_value=200, value=max(1, int(d["prior_n"])))
             prior_funded = b.number_input("Of which funded", min_value=0, max_value=int(prior_n), value=min(int(d["prior_funded"]) if d["prior_n"] else 1, int(prior_n)))
             since = st.number_input("Days since your last campaign ended", min_value=0, max_value=6000, value=int(d["days_since_last"]))
     c = {"parent": parent, "cat_name": cat_name, "cat_id": int(CATS[(CATS.parent == parent) & (CATS.name == cat_name)].cat_id.iloc[0]),
@@ -313,7 +313,9 @@ if page == "Check-up":
 if page == "Goal optimizer":
     c = current_campaign()
     X = P.campaign_features(c, META, TEXT)
-    goals = np.unique(np.round(np.geomspace(max(c["goal_usd"] * 0.2, 100), c["goal_usd"] * 3, 48), -1))
+    goals = np.unique(np.concatenate([np.round(np.geomspace(max(c["goal_usd"] * 0.2, 100), c["goal_usd"] * 3, 48), -1),
+                                      [c["goal_usd"], c["min_budget_usd"], c["goal_usd"] * 1.5]]))      # the three goals in the table are computed exactly
+    goals = goals[goals >= 100]
     V = pd.concat([X] * len(goals), ignore_index=True); d = np.log10(goals / c["goal_usd"])
     V["goal_usd"] = goals; V["log_goal_usd"] = np.log10(goals); V["goal_ratio"] = X.goal_ratio.iloc[0] + d; V["log_goal_per_day"] = X.log_goal_per_day.iloc[0] + d
     low, high = advisor.chances(V)
@@ -383,10 +385,24 @@ def score_cohort(df, code_version=CODE_VERSION):
     df = df.rename(columns={col: col.strip().lower().replace(" ", "_") for col in df.columns})
     missing = [col for col in COHORT_COLUMNS if col not in df.columns]
     if missing:
-        return None, f"These columns are missing: {', '.join(missing)}. Download the template to see the expected format."
-    rows, problems = [], []
+        return None, {"n": len(df), "scored": 0, "problems": [f"These columns are missing: {', '.join(missing)}. Download the template to see the expected format."], "notes": []}
+    rows, problems, notes = [], [], []
     lookup = {(r.parent.lower(), r["name"].lower()): r.cat_id for _, r in CATS.iterrows()}
+    rules = {"goal_usd": (100, 5_000_000), "min_budget_usd": (0, 5_000_000), "duration_days": (1, 60), "prep_days": (0, 1500), "has_video": (0, 1),
+             "prelaunch_page": (0, 1), "earlier_campaigns": (0, 200), "earlier_funded": (0, 200), "days_since_last": (0, 6000)}
     for i, x in df.iterrows():
+        bad = []                                         # check every field first, so the coach sees exactly what to fix
+        for col, (lo_, hi_) in rules.items():
+            v = pd.to_numeric(x[col], errors="coerce")
+            if pd.isna(v): bad.append(f"{col} is empty or not a number")
+            elif not lo_ <= v <= hi_: bad.append(f"{col} = {x[col]} is outside {lo_}–{hi_:,}")
+        if pd.isna(pd.to_datetime(x.launch_date, errors="coerce")): bad.append("launch_date is not a date (use YYYY-MM-DD)")
+        if COUNTRY_CODES.get(str(x.country).strip().lower(), str(x.country).strip().upper()) not in COUNTRY_NAMES: bad.append(f"country '{x.country}' is not one of the 25 countries in our data")
+        if (str(x.main_category).strip().lower(), str(x.category).strip().lower()) not in lookup: bad.append(f"category '{x.main_category} / {x.category}' not found")
+        if bad:
+            problems.append(f"Row {i + 1} ({str(x.title)[:40]}): " + "; ".join(bad)); continue
+        if float(x.min_budget_usd) > float(x.goal_usd): notes.append(f"Row {i + 1}: min_budget_usd is above goal_usd, so the goal was used as the minimum budget")
+        if float(x.earlier_funded) > float(x.earlier_campaigns): notes.append(f"Row {i + 1}: earlier_funded is above earlier_campaigns, so it was set to earlier_campaigns")
         try:
             cat_id = lookup[(str(x.main_category).strip().lower(), str(x.category).strip().lower())]
             c = {"cat_id": cat_id, "country": COUNTRY_CODES.get(str(x.country).strip().lower(), str(x.country).strip().upper()), "name": str(x.title),
@@ -400,13 +416,12 @@ def score_cohort(df, code_version=CODE_VERSION):
                          "Top fix": r["fixes"][0]["change"] if r["fixes"] else "No single change stands out",
                          "Gain (points)": round(r["fixes"][0]["gain"]) if r["fixes"] else 0, "Assessment": r["verdict"],
                          "Product type rarely funded": "yes" if r["areas"]["Market"] <= 15 else "", "_low": r["low"]})
-        except KeyError:
-            problems.append(f"Row {i + 1}: category '{x.main_category} / {x.category}' not found")
         except Exception as e:
-            problems.append(f"Row {i + 1}: could not be read ({type(e).__name__})")
+            problems.append(f"Row {i + 1} ({str(x.title)[:40]}): could not be scored ({type(e).__name__})")
+    summary = {"n": len(df), "scored": len(rows), "problems": problems, "notes": notes}
     if not rows:
-        return None, "No row could be scored. " + "; ".join(problems[:5])
-    return pd.DataFrame(rows).sort_values("_low").reset_index(drop=True), "; ".join(problems)
+        return None, summary
+    return pd.DataFrame(rows).sort_values("_low").reset_index(drop=True), summary
 
 if page == "Coach view":
     st.markdown("<div class='cc-h' style='font-size:1.3rem'>Triage a whole cohort</div><span class='cc-note'>Upload one row per planned campaign. "
@@ -420,10 +435,15 @@ if page == "Coach view":
     if uploaded is None:
         st.caption("No file yet: showing the example cohort of 6 campaigns.")
     scored, message = score_cohort(data, CODE_VERSION)
+    if message["problems"]:
+        st.warning(f"**{message['scored']} of {message['n']} rows scored.** Fix these rows in your file and upload it again:\n\n" + "\n".join(f"- {p}" for p in message["problems"]))
+    elif uploaded is not None:
+        st.success(f"All {message['n']} rows scored.")
+    if message["notes"]:
+        st.info("Adjusted values:\n\n" + "\n".join(f"- {p}" for p in message["notes"]))
     if scored is None:
-        st.error(message)
+        st.error("No row could be scored. Download the template to see the expected format.")
     else:
-        if message: st.warning(message)
         out = scored.copy()
         n_coach = int(round(len(out) * capacity))      # coaching slots: the riskiest teams by rank, up to the coach's capacity
         out.insert(0, "Risk rank", out.index + 1); out = out.drop(columns="_low")
@@ -506,9 +526,9 @@ if page == "Benchmarks":
                f"campaigns ever launched on Kickstarter. All categories: 43%. All-time average; recent rates are higher.</span></div>", unsafe_allow_html=True)
     off = pd.DataFrame({"Category": parents, "rate": [META["official_rate"][p] * 100 for p in parents]}); off["picked"] = off.Category == parent
     chart = alt.Chart(off).mark_bar(cornerRadiusEnd=5, height=16).encode(
-        x=alt.X("rate:Q", title="Official funding rate, all time (%)", scale=alt.Scale(domain=[0, 80])), y=alt.Y("Category:N", sort="-x", title=None),
+        x=alt.X("rate:Q", title="Official funding rate, all time (%)", scale=alt.Scale(domain=[0, 80])), y=alt.Y("Category:N", sort="-x", title=None, axis=alt.Axis(labelOverlap=False, labelLimit=160)),
         color=alt.condition(alt.datum.picked, alt.value(ui.TEAL), alt.value("#CBD3DC")), tooltip=["Category", alt.Tooltip("rate:Q", title="Funded (%)", format=".0f")])
-    b.altair_chart(chart.properties(height=360), width='stretch')
+    b.altair_chart(chart.properties(height=420), width='stretch')
     st.markdown(f"<div class='cc-h'>What funded {parent} campaigns look like</div><span class='cc-note'>From funded campaigns in our data, launched from 2023 to June 2026. "
                 "We hold about 85% of all funded campaigns, so these figures describe funded campaigns fairly well, though coverage differs by year and category. Funding rates from our data are not shown: it misses too many failed campaigns.</span>",
                 unsafe_allow_html=True)

@@ -54,7 +54,7 @@ On 4,000 campaigns of 2025 (minimum budget assumed at half the goal):
 Caveat: **pre-launch page and preparation time stand for groundwork** (an audience built before launch). Opening a page the day before will not add these points. Wording in the app: "campaigns that did this were funded more often".
 
 ## 6. Product types that do badly (note for coaches)
-Rule: Product-type score ≤ 15 → note that this type of product has rarely been funded on Kickstarter and that changing the set-up will not fix that. On 2025: 3,447 campaigns (13%), funded 21% in sample against 78% for the rest. Mostly apps, web, restaurants, software, drinks.
+Rule: Product-type score ≤ 15 → note that this type of product has rarely been funded on Kickstarter and that, in past campaigns, changing the set-up rarely made up for that. On 2025: 3,447 campaigns (13%), funded 21% in sample against 78% for the rest. Mostly apps, web, restaurants, software, drinks.
 
 ## 7. Explanation tree (class: decision tree, depth 3)
 Built on readable inputs only (no text score, no category codes). Path: track record → pre-launch page → goal above about $10,000–13,000, or number of earlier funded campaigns. The app shows the path and a band (lower / middle / higher), not a percentage.

@@ -27,7 +27,7 @@ It is a class method and handles missing values and mixed inputs well. Honestly,
 Seven things, each labelled in the app: the text score fed into the main model, the rule that a higher goal can only lower the chance, calibration, the adjustment to official rates, SHAP for the explanations, the one-change-at-a-time advice, and nearest neighbours for similar campaigns. Each exists because the decision needs it: a coach needs reasons and a believable percentage, not only a score.
 
 **9. Can a founder really raise the chance by following the advice?**
-We do not claim that. The app says "campaigns that did this were funded more often". The two biggest patterns, a pre-launch page and more preparation time, stand for groundwork such as building an audience. Opening a page the day before launch will not help.
+We do not claim that. The app says "campaigns that did this were funded more often". The two biggest patterns, a pre-launch page and more preparation time, stand for groundwork such as building an audience. Our data cannot tell whether opening a page shortly before launch would help.
 
 **10. How accurate is the percentage?**
 The ranking is solid, the level is rough. That is why we show a range, with a median width of 14.5 points, and a "middle estimate" halfway between the two ends. On the one public figure we could check, tabletop games in 2024, Kickstarter reports 80% funded and our middle estimate is 78%. One check is not proof, so we call it an estimate.

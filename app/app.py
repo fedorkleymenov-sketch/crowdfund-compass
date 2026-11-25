@@ -12,11 +12,17 @@ import pandas as pd
 import streamlit as st
 import altair as alt
 
+import hashlib
+import importlib
+import features, modeling
 import preprocess as P
 import advice as A
 import ui
-import importlib
-importlib.reload(ui)        # Streamlit Cloud can keep an old ui.py in memory after an update; this loads the current one
+# Streamlit Cloud can keep old copies of our modules in memory after an update: always load the current ones,
+# and tie the cached model to the code version, so a code change always builds a fresh Advisor.
+for _m in (features, modeling, P, A, ui):
+    importlib.reload(_m)
+CODE_VERSION = hashlib.md5(b"".join(open(m.__file__, "rb").read() for m in (features, modeling, P, A))).hexdigest()
 
 st.set_page_config(page_title="Crowdfund Compass", page_icon=os.path.join(P.HERE, "assets", "favicon.png"), layout="wide",
                    initial_sidebar_state="collapsed")
@@ -28,11 +34,11 @@ ui.chart_theme()
 #########################################################
 
 @st.cache_resource(show_spinner="Loading the model…")
-def load_model():
+def load_model(code_version):
     art, meta, text = P.load_artifacts()
     return A.Advisor(art), meta, text
 
-advisor, META, TEXT = load_model()
+advisor, META, TEXT = load_model(CODE_VERSION)
 
 @st.cache_data
 def category_table():

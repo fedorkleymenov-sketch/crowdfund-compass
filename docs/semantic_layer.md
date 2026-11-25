@@ -26,7 +26,7 @@ Data: 24 Web Robots scrapes of public Kickstarter listings (2016-03 to 2026-11),
 |---|---|---|
 | Project (campaign) | `id`, `name`, `blurb`, `slug` | 488,967 rows; 430,082 finished |
 | Creator | `creator_id` | 323,236 creators with a finished project; 43,923 with more than one. Never shown or stored in the app |
-| Category | `parent_category` → `cat_id` | 15 main categories, 174 category ids (164 names) |
+| Category | `parent_category` → `cat_id` | 15 main categories, 174 category ids (164 names); 163 have both funded and failed campaigns in 2025 and count in the within-category AUC |
 | Place | `country`, `city` | 25 countries. City is not used (no signal); similar campaigns show category, country, year and goal |
 | Time | `launched_at` | Every "by year/month" statement uses the **launch date** |
 
@@ -41,10 +41,10 @@ Data: 24 Web Robots scrapes of public Kickstarter listings (2016-03 to 2026-11),
 7. **Crawls.** Full: about 185,000–211,000 projects. Partial: 2021–2023 scrapes, 2026-10-12, 2026-11-16.
 8. **Headline metric: AUC within category** (inside each `cat_id` with both funded and failed campaigns in the test year, averaged by size; 163 categories in 2025), with AUC within main category and overall AUC next to it.
 9. **Results are also reported separately** for the 29 capped categories and the rest.
-10. **Chances are shown as a range with a middle.** Upper value: calibrated probability in our sample. Lower value: the same after shifting the odds, per main category, by official odds ÷ sample odds. "Middle estimate": halfway between the two on the odds scale, checked against one public figure only. Never called "most likely".
+10. **Chances are shown as a range with a middle.** Two estimates: the calibrated probability in our sample, and the same after shifting the odds, per main category, by official odds ÷ sample odds. The lower value and the upper value are simply the smaller and the larger of the two (the official one is lower except in Dance; see 13a). "Middle estimate": halfway between the two on the log-odds scale, checked against one public figure only. Never called "most likely". The two ends are scenarios, with no measured guarantee that the true chance lies between them.
 11. **Founder history stays in the model**, but its raw funded percentages are not shown. A first campaign is shown neutrally, without a score.
 12. **Goal rule.** The model may only learn that a higher goal lowers the chance.
-13. **Verdict and coaching slots (v1.5, 25.11).** Verdict, the same on every screen: Coach first = lower value below 11.5%; Adjust = otherwise, if one change adds at least 5 points to the middle estimate (before rounding); Launch = otherwise. Coaching slots (Coach view): the riskiest teams ranked by the lower value, up to the coach's capacity (default 30%); slots never change a verdict.
+13. **Verdict and coaching slots (v1.5, 25.11).** Verdict, the same on every screen: Coach first = lower value below 11.5%; Adjust = otherwise, if one change adds at least 5 points to the middle estimate (before rounding); Launch = otherwise. Launch therefore means "not among the riskiest, and no single change adds 5 points": it is not a promise, and a Launch plan can still have a low range. Coaching slots (Coach view): the riskiest teams ranked by the lower value, up to the coach's capacity (default 30%); slots never change a verdict.
 13a. **Range ends are named by source** ("from our data", "adjusted to official rates"), not by position: in Dance the adjusted estimate is the higher one.
 14. **Advice is association.** A suggested change is worded "campaigns that did this were funded more often", never as a promise.
 

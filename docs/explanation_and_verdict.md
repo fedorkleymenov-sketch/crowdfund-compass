@@ -25,7 +25,8 @@ Check on 2025, funded in sample by band (weak / to improve / strong): Ambition 3
 Since 25.11 the assessment of a campaign and the coach's slots are two separate things (an outside review showed that a hopeless campaign outside the coach's capacity could be labelled "Launch").
 1. **Verdict, the same on every screen:** **Coach first** if the lower value is below 11.5% (where the riskiest 30% begin in a cohort with Kickstarter's official mix: computed as 11.6% on re-weighted 2025 data, fixed at 11.5% by decision on 16.11; so the verdict mix below is not a fully untouched test); **Adjust** if not, and one single change adds at least 5 points to the middle estimate (tested before rounding); **Launch** otherwise.
 2. **Coaching slots (Coach view only):** the riskiest teams, ranked by the lower value, up to the coach's capacity (default 30%, adjustable). The slider changes who gets a slot, never a verdict.
-3. Before 25.11 the cohort view labelled the slot holders "Coach first" and gave the rest Adjust or Launch, and the Adjust test used the gain at the upper value. The figures below for slots (failures reached) are unchanged; the verdict mix was recomputed.
+3. Launch therefore means "not among the riskiest, and no single change adds 5 points", not "ready": a Launch plan can still have a low range (in 4,000 campaigns of 2025, 26 Launch plans had a lower value below 20%).
+4. Before 25.11 the cohort view labelled the slot holders "Coach first" and gave the rest Adjust or Launch, and the Adjust test used the gain at the upper value. The figures below for slots (failures reached) are unchanged; the verdict mix was recomputed.
 
 Why rank by the lower value: inside a category the order is identical (AUC within category 0.859 both ways), but across categories it uses official levels instead of our biased sample levels.
 

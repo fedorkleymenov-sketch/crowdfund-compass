@@ -1,5 +1,5 @@
 const pptxgen = require("pptxgenjs");
-const { applyTheme } = require("/root/.claude/skills/synced/b1664417-94ef-45c8-81d6-57ef8c5fdbe5_11d7e28c-5c53-44f8-9979-b7add7647ad5/pptx/scripts/apply_theme.js");
+const { applyTheme } = require(process.env.APPLY_THEME || "/root/.claude/skills/synced/b1664417-94ef-45c8-81d6-57ef8c5fdbe5_11d7e28c-5c53-44f8-9979-b7add7647ad5/pptx/scripts/apply_theme.js");
 const THEME = { name: "Crowdfund Compass", headFontFace: "Arial", bodyFontFace: "Arial",
   colors: { dk1: "0B1F33", lt1: "FFFFFF", dk2: "5B6B7C", lt2: "F7F8FA", accent1: "0F6E56", accent2: "3FCFA4", accent3: "15803D", accent4: "B45309", accent5: "B91C1C", accent6: "CBD3DC", hlink: "0F6E56", folHlink: "5B6B7C" } };
 const H = THEME.colors;
@@ -88,10 +88,10 @@ stat(s, 6.0, 3.3, 3.5, "78% vs 80%", "our middle estimate against Kickstarter's 
 
 // ---------------- Section 3: impact (Fedor)
 sec = "Impact (Fedor)"; pres.addSection({ title: sec });
-s = S("With 30 slots per 100 teams, our ranking finds 29 failing teams; the best simple rule finds 25", "");
-s.addChart(pres.charts.BAR, [{ name: "Share of all failures reached", labels: ["Random", "Lowest official category rate", "Highest goal for the category", "Lowest subcategory rate", "Our model", "Maximum possible"], values: [30, 37.7, 37.3, 44.5, 51.1, 53.6] }], chartOpts({ x: 0.5, y: 1.35, w: 5.3, h: 3.65, barDir: "col", chartColors: [H.accent6, H.accent6, H.accent6, H.accent6, H.accent1, "9AA6B2"], barGapWidthPct: 50, valAxisMaxVal: 60, valAxisMinVal: 0, dataLabelFormatCode: '0"%"', valAxisLabelFormatCode: '0"%"', catAxisLabelFontSize: 9, showTitle: true, title: "Share of all failures reached with coaching slots for 30% of teams (2025 launches, re-weighted to Kickstarter's official mix: 56% fail)", titleFontSize: 10, titleColor: H.dk2, titleFontFace: "+mn-lt" }));
-stat(s, 6.05, 1.35, 3.45, "29 vs 25", "failing teams found per 100 campaigns with 30 coaching slots: our ranking vs the best simple rule (51% vs 45% of all failures).", C.accent1, 1.75, 26);
-stat(s, 6.05, 3.25, 3.45, "95%", "of the teams given a slot failed. Re-test on Jan–Jun 2026, settings fixed: 51% vs 45%, 96%. It shows who gets flagged, not how much coaching helps.", C.text1, 1.75, 26);
+s = S("With 30 slots per 100 teams, our ranking finds 29 failing teams; a one-page scorecard finds 27", "");
+s.addChart(pres.charts.BAR, [{ name: "Share of all failures reached", labels: ["Random", "Lowest official category rate", "Highest goal for the category", "Lowest sub-category rate", "Scorecard with 3 questions", "Our model", "Maximum possible"], values: [30, 37.7, 37.3, 44.5, 47.6, 51.1, 53.6] }], chartOpts({ x: 0.5, y: 1.35, w: 5.3, h: 3.65, barDir: "col", chartColors: [H.accent6, H.accent6, H.accent6, H.accent6, H.accent6, H.accent1, "9AA6B2"], barGapWidthPct: 50, valAxisMaxVal: 60, valAxisMinVal: 0, dataLabelFormatCode: '0"%"', valAxisLabelFormatCode: '0"%"', catAxisLabelFontSize: 9, catAxisLabelRotate: 0.01, showTitle: true, title: "Share of all failures reached with coaching slots for 30% of teams (2025 launches, re-weighted to Kickstarter's official mix: 56% fail)", titleFontSize: 10, titleColor: H.dk2, titleFontFace: "+mn-lt" }));
+stat(s, 6.05, 1.35, 3.45, "29 vs 27", "failing teams found per 100 campaigns with 30 coaching slots: our ranking vs a one-page scorecard (51% vs 48% of all failures). Best category rule: 25.", C.accent1, 1.75, 26);
+stat(s, 6.05, 3.25, 3.45, "95%", "of the teams given a slot failed. Re-test on Jan–Jun 2026, settings fixed: 51% vs 48% vs 45%. It shows who gets flagged, not how much coaching helps.", C.text1, 1.75, 26);
 
 // ---------------- Section 4: app and limits (Nico)
 sec = "App and limits (Nico)"; pres.addSection({ title: sec });
@@ -124,10 +124,17 @@ T(s, "Built and dropped: crowding (3), city size, category averages (3), title c
 
 s = S("Backup: all models compared", "Speaker: Alex.\nAUC in one sentence: take one funded and one failed campaign from the same category; how often does the model give the funded one the higher score? We train on 2023–2024 and test once on 2025. Tuning: grid search with time-ordered cross-validation. Accuracy 85% against 71% for always saying funded.");
 s.addChart(pres.charts.BAR, [{ name: "AUC within category, 2025", labels: ["Baselines", "XGBoost, 6 inputs", "Decision tree", "Logistic regression", "Random forest", "XGBoost (final)", "LightGBM + Optuna"].reverse(), values: [0.5, 0.753, 0.823, 0.857, 0.858, 0.859, 0.866].reverse() }],
-  chartOpts({ x: 0.5, y: 1.35, w: 5.9, h: 3.65, barDir: "bar", chartColors: [H.accent6, H.accent1, H.accent6, H.accent6, H.accent6, H.accent6, H.accent6], barGapWidthPct: 45, valAxisMinVal: 0, valAxisMaxVal: 1, valAxisMajorUnit: 0.25, dataLabelFormatCode: "0.000", valAxisLabelFormatCode: "0.00", showTitle: true, title: "AUC within category, campaigns launched in 2025 (n = 26,533); 0.5 = guessing, 1 = perfect", titleFontSize: 10, titleColor: H.dk2, titleFontFace: "+mn-lt" }));
+  chartOpts({ x: 0.5, y: 1.35, w: 5.9, h: 3.65, barDir: "bar", chartColors: [H.accent6, H.accent1, H.accent6, H.accent6, H.accent6, H.accent6, H.accent6], barGapWidthPct: 45, valAxisMinVal: 0, valAxisMaxVal: 1, valAxisMajorUnit: 0.25, dataLabelFormatCode: "0.000", valAxisLabelFormatCode: "0.00", showTitle: true, title: "AUC within category, campaigns launched in 2025 (n = 26,508 in the 163 categories with both outcomes); 0.5 = guessing, 1 = perfect", titleFontSize: 10, titleColor: H.dk2, titleFontFace: "+mn-lt" }));
 stat(s, 6.7, 1.45, 2.8, "0.86", "AUC within category on 2025 launches (Jan–Jun 2026: 0.87). 0.5 = guessing, 1 = perfect.", C.accent1, 1.65);
 stat(s, 6.7, 3.25, 2.8, "85% vs 71%", "accuracy against always saying \"funded\"", C.text1, 1.65);
 
 
-await pres.writeFile({ fileName: "Crowdfund_Compass_Group11.pptx" }); await applyTheme("Crowdfund_Compass_Group11.pptx", THEME); console.log("written");
+await pres.writeFile({ fileName: "Crowdfund_Compass_Group11.pptx" });
+// Slide 10 has seven bars: keep its category labels horizontal (wrapped). pptxgenjs cannot write rot="0", so the
+// chart is written with a tiny rotation and fixed here.
+const JSZip = require(require.resolve("jszip", { paths: [require.resolve("pptxgenjs")] })), fs = require("fs"); const zip = await JSZip.loadAsync(fs.readFileSync("Crowdfund_Compass_Group11.pptx"));
+for (const f of Object.keys(zip.files).filter(f => /^ppt\/charts\/chart\d+\.xml$/.test(f))) {
+  const x = await zip.file(f).async("string"); if (x.includes('<a:bodyPr rot="600"/>')) zip.file(f, x.split('<a:bodyPr rot="600"/>').join('<a:bodyPr rot="0" vert="horz"/>')); }
+fs.writeFileSync("Crowdfund_Compass_Group11.pptx", await zip.generateAsync({ type: "nodebuffer", compression: "DEFLATE" }));
+await applyTheme("Crowdfund_Compass_Group11.pptx", THEME); console.log("written");
 })();

@@ -1,6 +1,6 @@
-# Live pitch, 3–5 minutes — Crowdfund Compass (draft 2, 25.11.2026)
+# Live pitch, 3–5 minutes — Crowdfund Compass (draft 3, 26.11.2026)
 
-About 540 words: roughly 4 minutes at 130 words per minute, plus about 30 seconds for the live demo. Every number matches the app, the deck and the report as of 25.11. This is a draft: say it in your own words.
+About 570 words: roughly 4.4 minutes at 130 words per minute, plus about 30 seconds for the live demo. Every number matches the app, the deck and the docs as of 26.11 (the value section now compares with a one-page scorecard: 29, 27, 25). This is a draft: say it in your own words.
 
 **What to have open:** the live app on the Coach view (https://azjftouvzzw5dbnqbqyrwl.streamlit.app/?page=Coach%20view), with the example cohort and the slider at 30%.
 
@@ -26,12 +26,12 @@ The model is XGBoost, a method from this course. We trained it on campaigns from
 **[Live demo, about 60 seconds]**
 Here is the coach's view. Six planned campaigns, and time for two. The app ranks them from riskiest to safest, and a line marks the coach's capacity. The two slots go to BudgetBuddy, a money app, and Voices of the Rhine, a documentary.
 
-For BudgetBuddy, the conversation is whether Kickstarter is the right route at all: apps have rarely been funded there. For Voices of the Rhine, there is a concrete next step: a pre-launch page.
+For BudgetBuddy, the conversation is whether Kickstarter is the right route at all: apps have rarely been funded there. For Voices of the Rhine, the app points to preparation: campaigns with a pre-launch page were funded more often, so the coach asks what audience the team has built.
 
 If I move the slider, more teams get a slot, but no team's verdict changes.
 
 **[Value, about 40 seconds]**
-Does the ranking beat what a coach could do without us? We tested it on 2025 campaigns, re-weighted to Kickstarter's real mix. With 30 slots per 100 teams, our ranking reaches about 29 teams that will fail. The best simple rule, picking the subcategories with the lowest funding rates, reaches 25. That is four more struggling teams found with the same hours. And we got the same result on the first half of 2026.
+Does the ranking beat what a coach could do without us? We tested it on 2025 campaigns, re-weighted to Kickstarter's real mix. With 30 slots per 100 teams, our ranking reaches about 29 teams that will fail. Picking the subcategories with the lowest funding rates reaches 25. A one-page scorecard that also asks three questions about the team reaches 27. So our ranking finds about two more struggling teams than a coach's best rule of thumb, with the same hours. And we got the same result on the first half of 2026.
 
 **[Limits and close, about 30 seconds]**
 We are careful about what this means. We measured which teams get flagged, not how much coaching helps them; that would need a real study with coaches. "Launch" is not a promise, so the app always shows the range. And less than half of the model's explanation comes from things a founder can change.

@@ -5,7 +5,7 @@
 # This script adds that rule and a one-page scorecard, with the SAME weighting, capacity and tie rule as stage6/stage7.
 #
 # It needs no raw data: it runs on app/models/similar.parquet (all 83,427 training and test campaigns) and meta.json.
-#   python notebooks/stage8_simple_rules.py
+#   python analysis/pipeline/stage8_simple_rules.py
 # The model's own figures cannot be recomputed here (its per-campaign predictions need the raw data);
 # they are copied from stage6_rules.py (2025) and stage7_frozen2026.py (January-June 2026).
 import os, json, warnings
@@ -14,7 +14,7 @@ from sklearn.linear_model import LogisticRegression
 warnings.filterwarnings('ignore')
 
 HERE = os.path.dirname(os.path.abspath(__file__))
-MODELS = os.path.join(HERE, '..', 'app', 'models')
+MODELS = os.path.join(HERE, '..', '..', 'app', 'models')
 D = pd.read_parquet(os.path.join(MODELS, 'similar.parquet'))
 OFFICIAL = json.load(open(os.path.join(MODELS, 'meta.json')))['official_rate']
 MODEL_REPORTED = {2025: 0.511, 2026: 0.511}          # from stage6_rules.py and stage7_frozen2026.py

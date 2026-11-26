@@ -25,6 +25,7 @@ Paths inside the scripts point to the original work folder (`/home/claude/work/v
 | `stage5_gain.py` | 25.11: "what to change" figures with gains on the middle estimate (4,000 campaigns of 2025) |
 | `stage6_rules.py` | 25.11: model vs simple rules at 30% capacity, 2025 re-weighted to the official mix |
 | `stage7_frozen2026.py` | 25.11: retrospective re-test on Jan–Jun 2026 with paired bootstrap |
+| `stage8_simple_rules.py` | 26.11: rules that look at the team (three questions, one-page scorecard) at 30% capacity, 2025 and Jan–Jun 2026; runs without the raw data (`app/models/similar.parquet`); output in `docs/simple_rules_output.txt` |
 | `export_app.py` | Writes the model files the app uses |
 | `mknb02–04.py`, `run_nb.py` | Generate and execute notebooks 02–04 |
 

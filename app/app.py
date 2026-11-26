@@ -291,7 +291,7 @@ if page == "Check-up":
             if float(r["areas"][area]) > 25: return ""
             g = r["area_best"].get(area, 0)
             if g < 2: return "Weak, but no single change here is linked to 2 more points. It is the overall set-up, not one setting."
-            if g < 8: return f"Weak, yet the best single change here adds only about {g:.0f} points: within the limits you set, the plan stays far from what is typical."
+            if g < 8: return f"Weak, yet the best single change here adds only about {int(g)} points: within the limits you set, the plan stays far from what is typical."
             return ""
         bars = "".join(ui.bar(a, sub, float(r["areas"][a]), weak_note(a)) for a, sub in LEVERS.items())
         tip_levers = "Each bar compares one part of your plan with recent campaigns. 50 = typical. Green = strong, amber = to improve, red = weak."
@@ -340,9 +340,13 @@ if page == "Goal optimizer":
     # goal_is_round stays at the plan's own value for every goal on the curve (26.11), so a lower goal never scores lower
     low, high = advisor.chances(V)
     curve = pd.DataFrame({"goal": goals, "low": low * 100, "high": high * 100, "mid": [middle(a, b) * 100 for a, b in zip(low, high)]})
+    # The recommended goal and the table are what Check-up gives for that exact figure (round-number flag computed for it),
+    # so a goal recommended here is never flagged as riskiest when the founder enters it in Check-up (26.11).
+    E = V.copy(); E["goal_is_round"] = P.is_round(goals); elow, ehigh = advisor.chances(E)
+    exact = pd.DataFrame({"goal": goals, "low": elow * 100, "high": ehigh * 100, "mid": [middle(a, b) * 100 for a, b in zip(elow, ehigh)]})
     cut = META["verdict"]["reference_cut"] * 100
-    ok = curve[(curve.goal >= c["min_budget_usd"]) & (curve.low >= cut)]
-    here = curve.iloc[(curve.goal - c["goal_usd"]).abs().argmin()]
+    ok = exact[(exact.goal >= c["min_budget_usd"]) & (curve.low >= cut) & (exact.low >= cut)]
+    here = exact.iloc[(exact.goal - c["goal_usd"]).abs().argmin()]
     rec = None if len(ok) == 0 else (here if ok.goal.max() >= c["goal_usd"] else ok.iloc[-1])
     x = alt.X("goal:Q", scale=alt.Scale(type="log", nice=False, domain=[float(goals.min()), float(goals.max())]), axis=alt.Axis(format="$~s", title="Funding goal (USD, log scale)"))
     tips = [alt.Tooltip("goal:Q", title="Goal", format="$,.0f"), alt.Tooltip("mid:Q", title="Middle estimate (%)", format=".0f"),
@@ -357,21 +361,21 @@ if page == "Goal optimizer":
         layers += [alt.Chart(pd.DataFrame({"goal": [c["min_budget_usd"]]})).mark_rule(color=ui.AMBER, strokeDash=[4, 3]).encode(x="goal:Q"),
                    alt.Chart(pd.DataFrame({"goal": [c["min_budget_usd"]], "y": [90], "t": ["minimum budget"]})).mark_text(align="right", dx=-6, color=ui.AMBER, fontWeight=600).encode(x="goal:Q", y="y:Q", text="t:N")]
     if rec is not None:
-        layers.append(alt.Chart(pd.DataFrame({"goal": [rec.goal], "mid": [rec.mid]})).mark_point(size=260, filled=True, color=ui.GREEN, stroke="#fff", strokeWidth=3, opacity=1).encode(x="goal:Q", y="mid:Q"))
+        layers.append(alt.Chart(pd.DataFrame({"goal": [rec.goal], "mid": [curve.mid[curve.goal == rec.goal].iloc[0]]})).mark_point(size=260, filled=True, color=ui.GREEN, stroke="#fff", strokeWidth=3, opacity=1).encode(x="goal:Q", y="mid:Q"))
     left, right = st.columns([7, 4], gap="large")
     with left:
         st.markdown("<div class='cc-h'>How the chance changes with the goal</div>", unsafe_allow_html=True)
         st.altair_chart(alt.layer(*layers).properties(height=380), width='stretch')
         st.markdown("<span class='cc-note'>Line = middle estimate. Shaded band = range. "
                     f"{RANGE_LABELS} Green dot = recommended goal. Pattern in past campaigns, not a cause. "
-                    "Every goal on the curve is scored like your own goal (round figure or not), so a lower goal never scores lower.</span>", unsafe_allow_html=True)
+                    "The line changes only the size of the goal: every goal on it is scored like your own (round figure or not), so a lower goal never scores lower. The recommended goal and the table show what Check-up gives for that exact figure.</span>", unsafe_allow_html=True)
     with right:
         if rec is None:
             st.markdown(f"<div class='cc-card'><span class='cc-eyebrow'>Recommended goal</span><div class='cc-h' style='color:{ui.RED}'>None covers your budget</div>"
                         "<span class='cc-note'>At any goal that covers your minimum budget, this plan stays in the riskiest group. The goal is not the main problem: look at the check-up.</span></div>", unsafe_allow_html=True)
         else:
             keep = rec.goal == here.goal
-            atmin = curve.iloc[(curve.goal - c["min_budget_usd"]).abs().argmin()]
+            atmin = exact.iloc[(exact.goal - c["min_budget_usd"]).abs().argmin()]
             why = (f" A lower goal would raise the chance a little ({atmin.mid:.0f}% at your minimum budget), but you would also ask for less money. "
                    f"The recommendation is the highest goal that stays out of the riskiest group, not the goal with the highest chance."
                    if keep and c["min_budget_usd"] < c["goal_usd"] * 0.98 else "")
@@ -380,7 +384,7 @@ if page == "Goal optimizer":
                         f"Middle estimate {rec.mid:.0f}% (between {rec.low:.0f}% and {rec.high:.0f}%).{why}</div></div>", unsafe_allow_html=True)
         rows = ""
         for label, g in [("Minimum budget", c["min_budget_usd"]), ("Your goal", c["goal_usd"]), ("Your goal + 50%", c["goal_usd"] * 1.5)]:
-            row = curve.iloc[(curve.goal - max(g, 100)).abs().argmin()]
+            row = exact.iloc[(exact.goal - max(g, 100)).abs().argmin()]                  # as Check-up scores this figure
             shown = f"${g:,.0f}" + (" (scored at $100, the smallest goal)" if g < 100 else "")
             rows += (f"<div style='display:flex;justify-content:space-between;padding:.55rem 0;border-bottom:1px solid {ui.LINE}'><span><b>{label}</b><br>"
                      f"<span class='cc-note'>{shown}</span></span><span style='text-align:right'><b>{row.mid:.0f}%</b><br><span class='cc-note'>{row.low:.0f}–{row.high:.0f}%</span></span></div>")

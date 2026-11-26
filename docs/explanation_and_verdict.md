@@ -37,7 +37,7 @@ Why rank by the lower value: inside a category the order is identical (AUC withi
 | 40% | 87% | 63% | 66% | 92% |
 | 50% | 93% | 54% | 79% | 88% |
 
-- In the official mix 56% of campaigns fail (our sample: 29%). A coach with capacity for 30% can therefore reach at most 54% of the failures; the model reaches 51%.
+- In the official mix 56% of campaigns fail (our sample: 29%). A coach with capacity for 30% can therefore reach at most 54% of the failures; the model reaches 51%. The 95% is the same result seen from the other side, not a second one: 0.511 × 56 ÷ 30 = 95.4%.
 - Simulated cohorts of 40 drawn from 2025, coach takes the 12 riskiest: on average 74% of the cohort's failures are among them (in 9 of 10 cohorts between about 55% and over 90%).
 - Verdict mix (4,000 campaigns of 2025, gains on the middle estimate): Coach first 17% (12% funded in sample), Adjust 32% (66%), Launch 51% (95%).
 - Adjust threshold sensitivity (share of non-Coach-first campaigns labelled Adjust): 3 points 50%, 5 points 38%, 8 points 29%, 10 points 24%.

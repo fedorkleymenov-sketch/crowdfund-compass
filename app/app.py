@@ -132,6 +132,18 @@ def check(c):
             "low_is_official": official <= ours,
             "fixes": fixes, "verdict": advisor.verdict(low[0], fixes), "shap": advisor.shap(X).iloc[0].sort_values()}
 
+def shown_gain(f):
+    """Gain as shown on the card: the difference of the two rounded middle estimates (40% -> 63% reads as +23)."""
+    return round(f["mid"]) - round(f["mid_before"])
+
+def gain_text(f):
+    """The Adjust test uses the unrounded gain. When rounding would show 5 or more for a gain below the mark
+    (69% -> 74% for a real +4.3), say so, so that a Launch card never seems to contradict its own verdict."""
+    mark = META["verdict"]["adjust_gain"]
+    if f["gain"] < mark <= shown_gain(f):
+        return f"+{int(f['gain'] * 10) / 10:.1f} points before rounding, below the {mark:.0f}-point mark for Adjust"
+    return f"about +{shown_gain(f)} points"
+
 def step(n, title):
     st.markdown(f"<div class='cc-step'><span class='cc-num'>{n}</span><b>{title}</b></div>", unsafe_allow_html=True)
 
@@ -269,7 +281,7 @@ if page == "Check-up":
             f = r["fixes"][0]
             st.markdown(f"<div class='cc-next cc-fade'><span class='cc-eyebrow'>Best next step</span><div class='big'>{f['change']}</div>"
                         f"<div class='sub'>Campaigns that did this were funded more often: middle estimate {f['mid_before']:.0f}% → {f['mid']:.0f}% "
-                        f"(about +{round(f['mid']) - round(f['mid_before'])} points).</div></div>", unsafe_allow_html=True)
+                        f"({gain_text(f)}).</div></div>", unsafe_allow_html=True)
         else:
             st.markdown("<div class='cc-card cc-fade'><span class='cc-eyebrow'>Best next step</span><div class='cc-h'>No single change stands out</div>"
                         "<span class='cc-note'>Changing the goal, length, launch day, video, pre-launch page, preparation time, title or blurb is not linked to 2 more points.</span></div>",
@@ -325,7 +337,7 @@ if page == "Goal optimizer":
     goals = goals[goals >= 100]                                                                                     # $100 is the smallest goal the app scores
     V = pd.concat([X] * len(goals), ignore_index=True); d = np.log10(goals / c["goal_usd"])
     V["goal_usd"] = goals; V["log_goal_usd"] = np.log10(goals); V["goal_ratio"] = X.goal_ratio.iloc[0] + d; V["log_goal_per_day"] = X.log_goal_per_day.iloc[0] + d
-    V["goal_is_round"] = P.is_round(goals)                                                     # recomputed for every goal
+    # goal_is_round stays at the plan's own value for every goal on the curve (26.11), so a lower goal never scores lower
     low, high = advisor.chances(V)
     curve = pd.DataFrame({"goal": goals, "low": low * 100, "high": high * 100, "mid": [middle(a, b) * 100 for a, b in zip(low, high)]})
     cut = META["verdict"]["reference_cut"] * 100
@@ -351,7 +363,8 @@ if page == "Goal optimizer":
         st.markdown("<div class='cc-h'>How the chance changes with the goal</div>", unsafe_allow_html=True)
         st.altair_chart(alt.layer(*layers).properties(height=380), width='stretch')
         st.markdown("<span class='cc-note'>Line = middle estimate. Shaded band = range. "
-                    f"{RANGE_LABELS} Green dot = recommended goal. Pattern in past campaigns, not a cause.</span>", unsafe_allow_html=True)
+                    f"{RANGE_LABELS} Green dot = recommended goal. Pattern in past campaigns, not a cause. "
+                    "Every goal on the curve is scored like your own goal (round figure or not), so a lower goal never scores lower.</span>", unsafe_allow_html=True)
     with right:
         if rec is None:
             st.markdown(f"<div class='cc-card'><span class='cc-eyebrow'>Recommended goal</span><div class='cc-h' style='color:{ui.RED}'>None covers your budget</div>"
@@ -429,7 +442,9 @@ def score_cohort(df, code_version=CODE_VERSION):
             rows.append({"Campaign": c["name"], "Middle estimate (%)": round(r["mid"] * 100), "Chance (low)": round(r["low"] * 100),
                          "Chance (high)": round(r["high"] * 100), "Weakest area": min(LEVERS, key=lambda a: r["areas"][a]),
                          "Top fix": r["fixes"][0]["change"] if r["fixes"] else "No single change stands out",
-                         "Gain (points)": round(r["fixes"][0]["mid"]) - round(r["fixes"][0]["mid_before"]) if r["fixes"] else 0,  "Assessment": r["verdict"],   # gain rounded as on the check-up card
+                         "Gain (points)": shown_gain(r["fixes"][0]) if r["fixes"] else 0,                                    # gain rounded as on the check-up card
+                         "Gain before rounding": int(r["fixes"][0]["gain"] * 10) / 10 if r["fixes"] else 0.0,              # the number the Adjust test uses (5 or more = Adjust)
+                         "Assessment": r["verdict"],
                          "Product type rarely funded": "yes" if r["areas"]["Market"] <= 15 else "", "_low": r["low"]})
         except Exception as e:
             problems.append(f"Row {i + 1} ({str(x.title)[:40]}): could not be scored ({type(e).__name__})")

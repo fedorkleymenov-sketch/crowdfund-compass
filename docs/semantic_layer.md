@@ -1,7 +1,7 @@
-# Semantic Layer: Crowdfund Compass (Kickstarter) — v1.5, 25.11.2026
+# Semantic Layer: Crowdfund Compass (Kickstarter) — v1.6 (proposed), 26.11.2026
 
 Says what we mean by our data. Never change a definition silently; if a metric is not defined here, propose it and ask first.
-v1.0–v1.2 approved by Fedor on 16.11. Changes in v1.3: title capitalisation dropped (32 features), goal rule, "most likely" value, verdict rule, neutral first-campaign display. Change in v1.4 (approved by Fedor on 25.11): "most likely" renamed "middle estimate"; the coach claim is always stated as the result of a re-weighted test on 2025 campaigns. Change in v1.5 (approved by Fedor on 25.11): verdict and coaching slots separated; gains measured on the middle estimate; range ends named by source.
+v1.0–v1.2 approved by Fedor on 16.11. Changes in v1.3: title capitalisation dropped (32 features), goal rule, "most likely" value, verdict rule, neutral first-campaign display. Change in v1.4 (approved by Fedor on 25.11): "most likely" renamed "middle estimate"; the coach claim is always stated as the result of a re-weighted test on 2025 campaigns. Change in v1.5 (approved by Fedor on 25.11): verdict and coaching slots separated; gains measured on the middle estimate; range ends named by source. Change in v1.6 (proposed on 26.11 after Nico's examiner review, not yet approved by the group): the round-goal flag keeps the plan's own value when the app tests other goals.
 Data: 24 Web Robots scrapes of public Kickstarter listings (2016-03 to 2026-11), merged by `merge_v2.py` into one row per project. Official benchmark: Kickstarter stats page, last updated 01.01.2026.
 
 ## 1. Terms: file vs. business
@@ -54,7 +54,7 @@ Data: 24 Web Robots scrapes of public Kickstarter listings (2016-03 to 2026-11),
 |---|---|---|
 | Success (target) | 1 if `state == successful`, else 0 | Finished only |
 | Success rate (in sample) | successful ÷ finished, by launch date | Rule 3 label |
-| Goal (USD) | `goal × static_usd_rate` | Modelled as log10. The round-goal flag is computed in the project's own currency in training, but on the USD amount in the app (the app only asks for USD); it is recomputed for every goal the app tests |
+| Goal (USD) | `goal × static_usd_rate` | Modelled as log10. The round-goal flag is computed in the project's own currency in training, but on the USD amount in the app (the app only asks for USD); when the app tests other goals (goal suggestions, Goal optimizer) the flag keeps the plan's own value, so the goal rule holds (v1.6; on 25.11 it was recomputed for every tested goal, which let a suggested goal win only because it landed on a round number, for example $9,000: +5.3 points against +1.8 at $8,999). Limit: a round goal figure by itself is worth about 3 points in the model's estimate for the example plan ($15,000: 40.4%, $14,999: 37.0%); this is a pattern in past campaigns, not advice |
 | Campaign length | (`deadline − launched_at`) ÷ 86,400, days | |
 | Preparation time | (`launched_at − created_at`) ÷ 86,400, days | |
 | Goal ratio | log10 of Goal (USD) ÷ median Goal (USD) of the same `cat_id`, campaigns ended in the 12 months before the first day of the launch month | Main category if fewer than 20 prior campaigns |

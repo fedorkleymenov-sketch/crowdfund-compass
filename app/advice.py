@@ -74,8 +74,10 @@ class Advisor:
             if g < floor - 1e-9: break
             d = np.log10(f)
             v('Goal', f'Lower the goal by {round((1 - f) * 100)}% (to about ${g:,.0f})', goal_usd=g, log_goal_usd=np.log10(max(g, 1)),
-              goal_ratio=r.goal_ratio + d, log_goal_per_day=r.log_goal_per_day + d,
-              goal_is_round=int(np.isclose((max(g, 1) / 10 ** np.floor(np.log10(max(g, 1)))) % 0.5, 0)))
+              goal_ratio=r.goal_ratio + d, log_goal_per_day=r.log_goal_per_day + d)
+            # goal_is_round stays at the plan's own value (26.11): the goal rule (a lower goal never lowers the chance) covers
+            # the three goal inputs above but not the round-number flag. Recomputing the flag per tested goal let a
+            # suggestion win only because it landed on a round number ($9,000: +5.3 points, $8,999: +1.8).
         for dur in (15, 21, 30, 45):
             if abs(dur - r.duration_days) >= 4:
                 v('Duration', f'Run the campaign for {dur} days instead of {r.duration_days:.0f}', duration_days=dur,

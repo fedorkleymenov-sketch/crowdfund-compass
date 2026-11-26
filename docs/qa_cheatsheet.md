@@ -1,6 +1,6 @@
 # Q&A cheat sheet — Crowdfund Compass (Group 11)
 
-Fifteen questions a professor could ask, each with a short answer in plain words. Numbers are from `results.md` and `explanation_and_verdict.md`.
+Seventeen questions a professor could ask, each with a short answer in plain words. Numbers are from `results.md` and `explanation_and_verdict.md`.
 
 **1. What decision does this support, and for whom?**
 A startup coach with limited hours must decide which planned Kickstarter campaigns to see first. Each campaign gets one verdict: Launch, Adjust or Coach first. A founder can check a single plan.
@@ -33,7 +33,7 @@ We do not claim that. The app says "campaigns that did this were funded more oft
 The ranking is solid, the level is rough. That is why we show a range, with a median width of 14.5 points, and a "middle estimate" halfway between the two ends. On the one public figure we could check, tabletop games in 2024, Kickstarter reports 80% funded and our middle estimate is 78%. One check is not proof, so we call it an estimate.
 
 **11. What is the business value?**
-We tested this on 2025 campaigns, re-weighted to Kickstarter's official mix, where 56% of campaigns fail. A coach who can see 30% of the cohort and picks by our ranking reached 51% of all failures, where the maximum possible is 54%, and about 95% of the campaigns the coach saw failed. The best simple rule, picking the subcategories with the lowest funding rates, reached 45%: about 29 against 25 failing teams found per 100 campaigns. We then repeated the test on launches of January–June 2026 with every setting fixed on 16.11: 51% against 45% for the strongest simple rule (difference 6.1 points, 95% interval 5.5 to 7.0). Honestly, this is a retrospective re-test: we had already looked at 2026 results in notebook 03 before fixing the rule, although no setting was chosen on them. A new cohort may differ: re-weighting fixes the mix of funded and failed campaigns, but the hidden failures may differ from the ones we see. And the test shows who gets flagged, not how much coaching helps.
+We tested this on 2025 campaigns, re-weighted to Kickstarter's official mix, where 56% of campaigns fail. A coach who can see 30% of the cohort and picks by our ranking reached 51% of all failures, where the maximum possible is 54%, and about 95% of the campaigns the coach saw failed. The best category rule, picking the subcategories with the lowest funding rates, reached 45%. A one-page scorecard that also asks three questions about the team reached 48% (question 17). Per 100 campaigns that is about 29 failing teams found with our ranking, 27 with the scorecard and 25 with the category rule. We then repeated the test on launches of January–June 2026 with every setting fixed on 16.11: 51% against 45% for the strongest category rule (difference 6.1 points, 95% interval 5.5 to 7.0) and 48% for the scorecard. Honestly, this is a retrospective re-test: we had already looked at 2026 results in notebook 03 before fixing the rule, although no setting was chosen on them. A new cohort may differ: re-weighting fixes the mix of funded and failed campaigns, but the hidden failures may differ from the ones we see. And the test shows who gets flagged, not how much coaching helps.
 
 **12. What can a founder actually change?**
 Less than half of what the model uses. In the model's explanation, goal, timing, presentation and pitch account for 43%. What is being made and the creator's track record explain 57%. The app says so, and tells the coach when a type of product, such as apps or software, has rarely been funded on Kickstarter at all.
@@ -49,6 +49,9 @@ Get outcomes for the campaigns Kickstarter hides, for example by following live 
 
 **16. Why does a plan with a 12% lower value sometimes get "Launch"?**
 Launch only means two things: the plan is not among the riskiest (lower value at or above 11.5%), and no single tested change adds 5 points to the middle estimate. It is not a promise that the plan is ready or safe, which is why the app always shows the range next to the verdict.
+
+**17. A coach would simply ask: first campaign? pre-launch page? big goal? What does that reach?**
+We tested it. The three questions alone reach 45% of failures at 30% capacity, as much as the best category rule. Combined with the subcategory rate in a one-page scorecard they reach 48%. Our model reaches 51%, and the maximum is 54%. So against a rule a coach could keep on paper, the model finds about two more failing teams per 100, not four. What the model adds beyond that: the product-type signal from the text, a range and reasons for each team, and a what-if for each plan. Honestly, a logistic regression does as well as XGBoost, so the inputs carry the result.
 
 ## Short definitions to have ready
 - **Precision / recall at 50%:** when the model says "will fail" it is right 81% of the time, and it finds 63% of the failures.

@@ -26,6 +26,8 @@ Paths inside the scripts point to the original work folder (`/home/claude/work/v
 | `stage6_rules.py` | 25.11: model vs simple rules at 30% capacity, 2025 re-weighted to the official mix |
 | `stage7_frozen2026.py` | 25.11: retrospective re-test on Jan–Jun 2026 with paired bootstrap |
 | `stage8_simple_rules.py` | 26.11: rules that look at the team (three questions, one-page scorecard) at 30% capacity, 2025 and Jan–Jun 2026; runs without the raw data (`app/models/similar.parquet`); output in `docs/simple_rules_output.txt` |
+| `check_history.py` | 26.11: founder history recomputed with slow code on 695 campaigns with an earlier campaign and 695 random ones (0 mismatches) |
+| `coverage.py` | 26.11: our counts against Kickstarter's totals of 1 Jan 2026, with cancelled and suspended campaigns on both sides |
 | `export_app.py` | Writes the model files the app uses |
 | `mknb02–04.py`, `run_nb.py` | Generate and execute notebooks 02–04 |
 

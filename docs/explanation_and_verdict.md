@@ -49,7 +49,7 @@ On 4,000 campaigns of 2025 (minimum budget assumed at half the goal):
 - No change of 2 points or more: 35%. Median best gain 3.7 points; 43% have a change of 5 points or more, 24% of 10 or more.
 - Top fix: pre-launch page 18%, preparation 15%, length 11%, goal 10%, video 5%, launch day 3%, blurb 2%, title 1%.
 - Median gain when offered (points of the middle estimate; a model difference, not a measured effect): pre-launch page 10.8, preparation 6.7, goal 4.6, video 4.2, blurb 3.8, length 3.7, launch day 3.5, title 3.2.
-- These figures use a sample of 4,000 of the 26,533 test campaigns (SHAP figures use all 26,533). Script: `stage5_gain.py`, 25.11.2026.
+- These figures use a sample of 4,000 of the 26,533 test campaigns (SHAP figures use all 26,533). Script: `stage5_gain.py`, 25.11.2026. Re-run on 26.11 on the raw data with the round-number flag held at the plan's value (as in the code of 25.11 morning and after the fix of 26.11): identical figures. With the flag recomputed for every tested goal (code of 25.11 afternoon), 35.1% have no 2-point change and 14 of the 4,000 verdicts differ. Notebook 04 was re-run the same day and prints the same figures.
 
 Caveat: **pre-launch page and preparation time stand for groundwork** (an audience built before launch). Opening a page the day before will not add these points. Wording in the app: "campaigns that did this were funded more often".
 

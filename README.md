@@ -2,7 +2,7 @@
 
 A pre-launch readiness check for Kickstarter campaigns. Group project, HSG "Business Analytics & Data Science Applications" (Prof. Ivo Blohm), Group 11: Fedor Kleymenov, Alexandre Arcauz, Nico Braun.
 
-**Decision supported:** before launch, every campaign gets one verdict: *Launch*, *Adjust* (change one named thing) or *Coach first*. Made for startup coaches with limited hours, and for founders checking one plan.
+**Decision supported:** before launch, every campaign gets one verdict: *Launch*, *Adjust* (change one named thing) or *Rethink* (among the riskiest plans; called *Coach first* until 27.11). Made for startup coaches with limited hours, and for founders checking one plan.
 
 ## What is in this repository
 | Folder | Content |

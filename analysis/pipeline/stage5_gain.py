@@ -14,7 +14,7 @@ print('top fix by lever (share of campaigns):'); print(best.lever.value_counts(n
 print('best fix gain: median',round(best.gain.median(),1),'| share with no change >=2',round((best.lever=='none').mean(),3),'| >=5',round((best.gain>=5).mean(),3),'| >=10',round((best.gain>=10).mean(),3))
 allfx=pd.DataFrame([dict(f,i=i) for i,fx in res for f in fx]); print('gain when the lever is offered (points of the middle estimate):'); print(allfx.groupby('lever').gain.agg(['size','median','max']).round(1).to_string())
 smp=smp.join(best); smp['risky']=smp.low<0.115
-smp['verdict']=np.select([smp.risky,smp.gain>=5],['Coach first','Adjust'],'Launch')
+smp['verdict']=np.select([smp.risky,smp.gain>=5],['Rethink','Adjust'],'Launch')
 print(smp.groupby('verdict').agg(n=('success','size'),share=('success',lambda s:len(s)/len(smp)),funded_in_sample=('success','mean')).round(3).to_string())
 for g in (3,5,8,10): print('adjust threshold',g,'-> Adjust share among non-coach',round(((~smp.risky)&(smp.gain>=g)).sum()/(~smp.risky).sum(),3))
 # endpoint order: how often is the official-rate estimate the HIGHER one?

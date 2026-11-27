@@ -3,7 +3,7 @@
 Seventeen questions a professor could ask, each with a short answer in plain words. Numbers are from `results.md` and `explanation_and_verdict.md`.
 
 **1. What decision does this support, and for whom?**
-A startup coach with limited hours must decide which planned Kickstarter campaigns to see first. Each campaign gets one verdict: Launch, Adjust or Coach first. A founder can check a single plan.
+A startup coach with limited hours must decide which planned Kickstarter campaigns to see first. Each campaign gets one verdict: Launch, Adjust or Rethink. A founder can check a single plan.
 
 **2. Why this data and not the Kaggle Kickstarter file?**
 The Kaggle file has about six fields known before launch. The Web Robots scrapes add title and blurb, creator history, video and pre-launch page. With six fields our model reaches an AUC of 0.75 inside a category, with 32 it reaches 0.86.

@@ -6,7 +6,7 @@ import altair as alt
 NAVY, TEAL, TEAL_SOFT, INK, MUTED, LINE, BG = "#0B1F33", "#0F6E56", "#E7F4EF", "#0B1F33", "#5B6B7C", "#E4E8EE", "#F7F8FA"
 GREEN, AMBER, RED = "#15803D", "#B45309", "#B91C1C"                  # strong / to improve / weak (colour only with meaning)
 SOFT = {GREEN: "#E8F5EC", AMBER: "#FDF1DC", RED: "#FCE9E7"}
-VERDICT = {"Launch": GREEN, "Adjust": AMBER, "Coach first": RED}
+VERDICT = {"Launch": GREEN, "Adjust": AMBER, "Rethink": RED}
 
 LOGO = ("<svg width='{s}' height='{s}' viewBox='0 0 64 64' aria-hidden='true'><circle cx='32' cy='32' r='30' fill='#0B1F33'/>"
         "<circle cx='32' cy='32' r='23' fill='none' stroke='#fff' stroke-opacity='.3' stroke-width='2'/>"

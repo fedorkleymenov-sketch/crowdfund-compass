@@ -244,14 +244,14 @@ if page == "Home":
     T = META["test"]
     st.markdown(f"""<div class='cc-hero cc-fade'><span class='cc-eyebrow' style='color:#7FE3C4'>Pre-launch readiness check for Kickstarter</span>
 <h1>See which campaigns need a coach first, and what each one could change before launch.</h1>
-<p>On Kickstarter a campaign that misses its goal gets nothing. Crowdfund Compass compares a plan with past campaigns before it goes live and says: Launch, Adjust or Coach first.</p>
+<p>On Kickstarter a campaign that misses its goal gets nothing. Crowdfund Compass compares a plan with past campaigns before it goes live and says: Launch, Adjust or Rethink.</p>
 <div class='cc-kpis'>
 <div class='cc-kpi'><div class='n'>~{T['n_train'] / 1000:.0f},000</div><div class='t'>recent campaigns the model learned from (from 489,000 collected)</div></div>
 <div class='cc-kpi'><div class='n'>about half</div><div class='t'>of all failures reached at 30% coach capacity in a re-weighted test on 2025 campaigns. About 95% of flagged campaigns failed. A new cohort may differ.</div></div>
 <div class='cc-kpi'><div class='n'>2025–2026</div><div class='t'>tested on 39,500 campaigns launched after the ones it learned from</div></div>
 </div></div>""", unsafe_allow_html=True)
     cols = st.columns(3)
-    for col, (h, t) in zip(cols, [("One verdict per plan", "Launch, Adjust or Coach first, with the one change that is linked to the biggest gain."),
+    for col, (h, t) in zip(cols, [("One verdict per plan", "Launch, Adjust or Rethink, with the one change that is linked to the biggest gain."),
                                   ("Honest about uncertainty", "Chances are shown as a range. Kickstarter hides most failed campaigns, so no tool can know the exact level."),
                                   ("Made for coaches", "Upload a whole cohort and get it ranked from riskiest to safest, matched to the hours you have.")]):
         col.markdown(f"<div class='cc-card cc-fade'><div class='cc-h'>{h}</div><span class='cc-note'>{t}</span></div>", unsafe_allow_html=True)
@@ -271,7 +271,7 @@ if page == "Check-up":
     r = check(c)
     colour = ui.VERDICT[r["verdict"]]
     explain = {"Launch": "Not among the riskiest plans, and no single change adds 5 points. This is not a promise: the range shows the risk that remains.", "Adjust": "Worth changing one thing before launch.",
-               "Coach first": "Among the riskiest plans. Talk it through with a coach before launching."}[r["verdict"]]
+               "Rethink": "Among the riskiest plans. Rethink it before launching, ideally together with a coach."}[r["verdict"]]
     with right:
         st.markdown(f"<div id='result' style='scroll-margin-top:1rem'></div><div class='cc-card cc-fade'><div style='display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:.5rem'>"
                     f"<span class='cc-eyebrow'>{ui.tip('Chance of reaching the goal', TIP_CHANCE)}</span>{ui.badge(r['verdict'])}</div>"
@@ -484,7 +484,7 @@ if page == "Coach view":
         out["Coaching slot"] = np.where(out.index < n_coach, "yes", "")      # the assessment of each campaign does not depend on the slider
         out["Verdict"] = out.pop("Assessment")
         counts = out["Verdict"].value_counts()
-        summary = " ".join(f"<span>{ui.badge(v)} {counts.get(v, 0)}</span>" for v in ("Coach first", "Adjust", "Launch"))
+        summary = " ".join(f"<span>{ui.badge(v)} {counts.get(v, 0)}</span>" for v in ("Rethink", "Adjust", "Launch"))
         st.markdown(f"<div class='cc-counts'>{summary}<span class='cc-note'>· coaching slots: {n_coach} of {len(out)}</span></div>", unsafe_allow_html=True)
         st.caption("The verdict of each campaign is the same as in its check-up and does not change with the slider. The slider only decides "
                    "how many of the riskiest teams get a coaching slot (above the line). " + RANGE_LABELS)
@@ -601,7 +601,7 @@ if page == "How it works":
                     f"{acc('6 inputs of a typical public dataset', 0.75, '#CBD3DC')}{acc('Our 32 inputs', T['auc_within_category_2025'], ui.TEAL)}"
                     f"<span class='cc-note'>Bars run from 0.5 (guessing) to 1 (perfect). Campaigns launched in 2025, which the model had never seen. "
                     f"January–June 2026: {T['auc_within_category_2026h1']:.2f}. Accuracy {T['accuracy_2025'] * 100:.0f}% against 71% for always saying \"funded\".</span></div>", unsafe_allow_html=True)
-        st.markdown(f"<div class='cc-card'><span class='cc-eyebrow'>The verdict rule</span><p style='margin:.5rem 0'>{ui.badge('Coach first')} lower value below {META['verdict']['reference_cut'] * 100:.1f}%: "
+        st.markdown(f"<div class='cc-card'><span class='cc-eyebrow'>The verdict rule</span><p style='margin:.5rem 0'>{ui.badge('Rethink')} lower value below {META['verdict']['reference_cut'] * 100:.1f}%: "
                     f"among the riskiest plans</p><p style='margin:.5rem 0'>{ui.badge('Adjust')} one change is linked to at least "
                     f"{META['verdict']['adjust_gain']:.0f} more points</p><p style='margin:.5rem 0'>{ui.badge('Launch')} not among the riskiest, and no single change adds 5 points. Not a promise: the plan can still be risky, so read the range.</p><span class='cc-note'>In Coach view, coaching slots go to the riskiest teams by rank, up to the coach's capacity "
                     f"(default {META['verdict']['default_capacity'] * 100:.0f}%, adjustable). The slots do not change any verdict.</span></div>", unsafe_allow_html=True)

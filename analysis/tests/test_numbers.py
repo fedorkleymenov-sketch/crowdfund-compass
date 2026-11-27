@@ -8,5 +8,5 @@ for p in ["Check-up","Coach view","Goal optimizer","Similar campaigns"]:
     at.run()
     txt=" ".join(m.value for m in at.markdown if "<style" not in m.value)
     txt=re.sub(r"<[^>]+>"," ",txt); txt=re.sub(r"\s+"," ",txt)
-    keys=re.findall(r"(?:Coach first|Adjust|Launch)\b|\d+(?:\.\d+)?%|\$[\d,]+|\d+ of 10|\+\d+ points|#\d", txt)
+    keys=re.findall(r"(?:Rethink|Adjust|Launch)\b|\d+(?:\.\d+)?%|\$[\d,]+|\d+ of 10|\+\d+ points|#\d", txt)
     print(p, keys[:45])

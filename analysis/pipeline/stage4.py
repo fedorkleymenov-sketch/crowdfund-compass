@@ -50,7 +50,7 @@ print('top fix by lever (share of campaigns):'); print(best.lever.value_counts(n
 print('gain of the best fix, points: median',best.gain.median(),'| p75',best.gain.quantile(.75),'| share >=5',round((best.gain>=5).mean(),3),'| >=10',round((best.gain>=10).mean(),3))
 allfx=pd.DataFrame([dict(f,i=i) for i,fx in res for f in fx]); print('mean gain when the lever is offered:'); print(allfx.groupby('lever').gain.agg(['size','median','max']).round(1).to_string())
 smp=smp.join(best); smp['risky']=smp.low<cut30
-smp['verdict']=np.select([smp.risky,smp.gain>=5],['Coach first','Adjust'],'Launch')
+smp['verdict']=np.select([smp.risky,smp.gain>=5],['Rethink','Adjust'],'Launch')
 print(smp.groupby('verdict').agg(n=('success','size'),share=('success',lambda s:len(s)/len(smp)),funded_in_sample=('success','mean'),low=('low','mean'),high=('high','mean')).round(3).to_string())
 for g in (3,5,8,10): print('adjust threshold',g,'-> Adjust share among non-coach',round(((~smp.risky)&(smp.gain>=g)).sum()/(~smp.risky).sum(),3))
 # direction check of the levers against the raw data (within category, 2023-24): does the model's advice agree with what we see?
@@ -62,7 +62,7 @@ print(low.groupby('parent_category').size().sort_values(ascending=False).head(6)
 # ---- 6) depth-3 tree for the plain explanation
 print(export_text(ART['tree3'],feature_names=FM,decimals=2))
 # ---- 7) three example campaigns
-for i in [smp[smp.verdict=='Coach first'].index[3],smp[smp.verdict=='Adjust'].index[3],smp[smp.verdict=='Launch'].index[3]]:
+for i in [smp[smp.verdict=='Rethink'].index[3],smp[smp.verdict=='Adjust'].index[3],smp[smp.verdict=='Launch'].index[3]]:
     r=TE.loc[i]; print('\n',r['name'][:70],'|',r.parent_category,'/',r.subcategory,'| goal $',round(r.goal_usd),'| outcome:',['failed','funded'][r.success])
     print('  chance range',round(r.low*100),'-',round(r.high*100),'% | areas',{a:int(r['score_'+a]) for a in A.AREAS},'| verdict',smp.verdict.get(i))
     for f in adv.fixes(r): print('   +',f['gain'],'pts:',f['change'])

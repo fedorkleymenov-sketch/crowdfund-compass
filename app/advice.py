@@ -122,10 +122,10 @@ class Advisor:
 
     # ---- verdict
     def verdict(self, low_end, fixes, in_riskiest_share=None):
-        """The assessment of one campaign. Coach first: lower value below the reference cut (11.5%).
+        """The assessment of one campaign. Rethink (called "Coach first" until 27.11): lower value below the reference cut (11.5%).
         Adjust: not that, but one change adds at least `adjust_gain` points to the middle estimate. Launch: otherwise.
         Coaching slots in a cohort are a separate decision (riskiest teams by rank, up to the coach's capacity)."""
         risky = in_riskiest_share if in_riskiest_share is not None else (low_end < self.cut['reference_cut'])
-        if risky: return 'Coach first'
+        if risky: return 'Rethink'
         if fixes and fixes[0]['gain'] >= self.cut['adjust_gain']: return 'Adjust'
         return 'Launch'

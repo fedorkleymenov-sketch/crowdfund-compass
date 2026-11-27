@@ -23,10 +23,11 @@ Check on 2025, funded in sample by band (weak / to improve / strong): Ambition 3
 
 ## 4. Verdict rule (approved 16.11, revised 25.11)
 Since 25.11 the assessment of a campaign and the coach's slots are two separate things (an outside review showed that a hopeless campaign outside the coach's capacity could be labelled "Launch").
-1. **Verdict, the same on every screen:** **Coach first** if the lower value is below 11.5% (where the riskiest 30% begin in a cohort with Kickstarter's official mix: computed as 11.6% on re-weighted 2025 data, fixed at 11.5% by decision on 16.11; so the verdict mix below is not a fully untouched test); **Adjust** if not, and one single change adds at least 5 points to the middle estimate (tested before rounding); **Launch** otherwise.
+1. **Verdict, the same on every screen:** **Rethink** (called "Coach first" until 27.11; the rule is unchanged) if the lower value is below 11.5% (where the riskiest 30% begin in a cohort with Kickstarter's official mix: computed as 11.6% on re-weighted 2025 data, fixed at 11.5% by decision on 16.11; so the verdict mix below is not a fully untouched test); **Adjust** if not, and one single change adds at least 5 points to the middle estimate (tested before rounding); **Launch** otherwise.
 2. **Coaching slots (Coach view only):** the riskiest teams, ranked by the lower value, up to the coach's capacity (default 30%, adjustable). The slider changes who gets a slot, never a verdict.
 3. Launch therefore means "not among the riskiest, and no single change adds 5 points", not "ready": a Launch plan can still have a low range (in 4,000 campaigns of 2025, 26 Launch plans had a lower value below 20%).
 4. Before 25.11 the cohort view labelled the slot holders "Coach first" and gave the rest Adjust or Launch, and the Adjust test used the gain at the upper value. The figures below for slots (failures reached) are unchanged; the verdict mix was recomputed.
+5. On 27.11 the verdict "Coach first" was renamed **Rethink**. Reason: the Coach view showed, for example, "Coach first: 5" next to "coaching slots: 4", two different things with almost the same name. The verdict says how risky the plan is; a coaching slot says whether the coach has time for it. No rule and no number changed.
 
 Why rank by the lower value: inside a category the order is identical (AUC within category 0.859 both ways), but across categories it uses official levels instead of our biased sample levels.
 
@@ -39,7 +40,7 @@ Why rank by the lower value: inside a category the order is identical (AUC withi
 
 - In the official mix 56% of campaigns fail (our sample: 29%). A coach with capacity for 30% can therefore reach at most 54% of the failures; the model reaches 51%. The 95% is the same result seen from the other side, not a second one: 0.511 × 56 ÷ 30 = 95.4%.
 - Simulated cohorts of 40 drawn from 2025, coach takes the 12 riskiest: on average 74% of the cohort's failures are among them (in 9 of 10 cohorts between about 55% and over 90%).
-- Verdict mix (4,000 campaigns of 2025, gains on the middle estimate): Coach first 17% (12% funded in sample), Adjust 32% (66%), Launch 51% (95%).
+- Verdict mix (4,000 campaigns of 2025, gains on the middle estimate): Rethink 17% (12% funded in sample), Adjust 32% (66%), Launch 51% (95%).
 - Adjust threshold sensitivity (share of non-Coach-first campaigns labelled Adjust): 3 points 50%, 5 points 38%, 8 points 29%, 10 points 24%.
 
 ## 5. What to change

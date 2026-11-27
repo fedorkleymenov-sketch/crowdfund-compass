@@ -18,7 +18,7 @@ Check on 2025, funded in sample by band (weak / to improve / strong): Ambition 3
 
 ## 3. Chance range and "middle estimate"
 - **Two estimates, named by source:** the calibrated chance in our sample, and the same shifted to Kickstarter's official per-category rates. The lower and upper value are simply the smaller and the larger of the two. The official one is lower for 99.8% of 2025 campaigns; only in Dance, where the official rate is higher than in our data, it is the upper value. **Middle estimate:** halfway between the two on the log-odds scale (called "most likely" before 25.11). There is no measured guarantee that the true chance lies between the two.
-- Why the range is wide: our data holds about 85% of all funded campaigns but about 42% of the failed ones, so the true level is uncertain.
+- Why the range is wide: our data holds about 85% of all funded campaigns but about 47% of the unsuccessful ones (failed, cancelled or suspended, as Kickstarter counts them; 42% if only our failed campaigns are counted), so the true level is uncertain.
 - One public benchmark for the middle: tabletop games launched in 2024, official 80% funded; lower 66%, middle 78%, upper 86%.
 
 ## 4. Verdict rule (approved 16.11, revised 25.11)

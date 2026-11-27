@@ -80,7 +80,7 @@ DEFAULT = {"parent": "Games", "cat_name": "Tabletop Games", "country": "CH",
            "prep_days": 30, "has_video": 1, "prelaunch": 0, "prior_n": 0, "prior_funded": 0, "prior_cancelled": 0, "days_since_last": 180}
 RANGE_LABELS = ("The two ends are two estimates: one from our data, one adjusted to Kickstarter's official funding rate for the category "
                 "(usually the lower one, because our data misses failed campaigns). Middle estimate: halfway between the two; checked against one public figure only.")
-TIP_CHANCE = "The range is wide because our data shows only about 4 in 10 failed campaigns. " + RANGE_LABELS
+TIP_CHANCE = "The range is wide because our data shows fewer than half of the unsuccessful campaigns. " + RANGE_LABELS
 COACH_TEST = ("In a test on 2025 campaigns, re-weighted to Kickstarter's official mix, a coach who sees the riskiest "
               "30% reached about half of all failures, and about 95% of the flagged campaigns failed. A new cohort may differ.")
 FOUNDER_CONTROL = "Less than half of the model's explanation comes from things a founder can change"
@@ -618,7 +618,7 @@ if page == "How it works":
         st.markdown("<span class='cc-note'>In our data, after correction, predictions are within 5 points of what happened in 2025 (dashed line = perfect). "
                     "Real Kickstarter rates are lower than in our data, which is why the app shows a range.</span>", unsafe_allow_html=True)
     st.markdown("<div class='cc-h' style='margin-top:.6rem'>Limits you should know</div>", unsafe_allow_html=True)
-    limits = [("Our data misses many failed campaigns", "We hold about 85% of all funded campaigns but about 42% of the failed ones, because Kickstarter's listings hide most campaigns that failed. That is why chances are a range."),
+    limits = [("Our data misses many failed campaigns", "We hold about 85% of all funded campaigns but about 47% of the unsuccessful ones (failed, cancelled or suspended), because most of them do not appear in the public listings we collected. That is why chances are a range. The model itself compares funded with failed campaigns; cancelled ones are left out."),
               ("Ranking beats level", "The model is good at telling stronger plans from weaker ones. The exact percentage is rough. 'Middle estimate' was checked on one public figure: 80% official for tabletop games in 2024, 78% here."),
               ("Patterns, not causes", "'Campaigns with a pre-launch page were funded more often' does not mean a page causes funding."),
               (FOUNDER_CONTROL, "In the model's explanation, what is being made and the creator's track record explain 57% of the result; goal, timing, presentation and pitch explain 43%."),

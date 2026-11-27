@@ -1,6 +1,6 @@
 # Q&A cheat sheet — Crowdfund Compass (Group 11)
 
-Seventeen questions a professor could ask, each with a short answer in plain words. Numbers are from `results.md` and `explanation_and_verdict.md`.
+Eighteen questions a professor could ask, each with a short answer in plain words. Numbers are from `results.md` and `explanation_and_verdict.md`.
 
 **1. What decision does this support, and for whom?**
 A startup coach with limited hours must decide which planned Kickstarter campaigns to see first. Each campaign gets one verdict: Launch, Adjust or Rethink. A founder can check a single plan.
@@ -18,7 +18,7 @@ The tool is used on future campaigns, so we test on the future. We train on 2023
 Take one funded and one failed campaign at random: AUC is how often the model gives the funded one the higher score. 0.5 is guessing, 1 is perfect. We compute it inside each category that has both funded and failed campaigns (163 in 2025), because our data covers failed campaigns differently in each category. Across categories a model can look good just by learning which categories we cover well.
 
 **6. Your data is biased. How bad is it, and what did you do?**
-Kickstarter's listings hide most failed campaigns. We hold about 85% of all funded campaigns but about 42% of the failed ones, so 71% of our 2025 campaigns are funded against an official all-time 43%. We do three things: we judge the model inside categories, we give coaching slots by rank and not by a percentage, and we show the chance as a range between two estimates, one from our data and one adjusted to Kickstarter's official rates (usually the lower one).
+Most unsuccessful campaigns do not appear in the public listings we collected. We hold about 85% of all funded campaigns but about 47% of the unsuccessful ones (failed, cancelled or suspended, as Kickstarter counts them; 42% if we count only our failed ones), so 71% of our 2025 campaigns are funded against an official all-time 43%. We do three things: we judge the model inside categories, we give coaching slots by rank and not by a percentage, and we show the chance as a range between two estimates, one from our data and one adjusted to Kickstarter's official rates (usually the lower one).
 
 **7. Why XGBoost?**
 It is a class method and handles missing values and mixed inputs well. Honestly, the choice matters little: logistic regression scores 0.857 and the random forest 0.858 against 0.859. The inputs carry the result, not the algorithm.
@@ -52,6 +52,9 @@ Launch only means two things: the plan is not among the riskiest (lower value at
 
 **17. A coach would simply ask: first campaign? pre-launch page? big goal? What does that reach?**
 We tested it. The three questions alone reach 45% of failures at 30% capacity, as much as the best category rule. Combined with the subcategory rate in a one-page scorecard they reach 48%. Our model reaches 51%, and the maximum is 54%. So against a rule a coach could keep on paper, the model finds about two more failing teams per 100, not four. What the model adds beyond that: the product-type signal from the text, a range and reasons for each team, and a what-if for each plan. Honestly, a logistic regression does as well as XGBoost, so the inputs carry the result.
+
+**18. What did you do with cancelled campaigns?**
+We left them out of the model. Our outcome is funded or failed at the deadline; a cancelled campaign has no result at the deadline. Before 2026 our data holds 22,538 cancelled or suspended campaigns next to 162,910 failed ones. Kickstarter counts all of them as "unsuccessful", so when we compare our data with its totals we count them too: we hold 185,448 of 391,396, about 47%. The limit: the official funding rates we use for the lower value include cancellations, so the lower value treats a cancellation like a failure, and the app cannot say how likely a plan is to be cancelled.
 
 ## Short definitions to have ready
 - **Precision / recall at 50%:** when the model says "will fail" it is right 81% of the time, and it finds 63% of the failures.
